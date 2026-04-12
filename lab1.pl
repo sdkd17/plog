@@ -1,4 +1,4 @@
-% pertenece(?X,?L) ← El elemento X pertenece a la lista L
+% pertenece(?X,?L) <- El elemento X pertenece a la lista L
 
 
 /*
@@ -15,7 +15,7 @@ Ejemplos:
 pertenece(X,[X|_]).
 pertenece(X, [_|Ls]) :- pertenece(X,Ls).
 
-% seleccionar(?X,?L,?L1) ← La lista L1 es el resultado de eliminar una ocurrencia del elemento X de la lista L.
+% seleccionar(?X,?L,?L1) <- La lista L1 es el resultado de eliminar una ocurrencia del elemento X de la lista L.
 
 /*
  Ejemplos:
@@ -31,14 +31,14 @@ pertenece(X, [_|Ls]) :- pertenece(X,Ls).
 */
 
 % seleccionar(_, [], []).
-% seleccionar(X, [X|Ls], Ls).ß
+% seleccionar(X, [X|Ls], Ls).
 % seleccionar(X, [L|Ls], L1) :- seleccionar(X, Ls, L2),  append([L], L2, L1).
 
 seleccionar(_, [], []).
 seleccionar(X, [X|Ls], Ls).
 seleccionar(X, [Y|Ls], [Y|L1]) :- seleccionar(X, Ls, L1).
 
-% rotar(+L,+N,-R) ← La lista R es el resultado de rotar la lista L N veces hacia la izquierda. Si N es negativo, el movimiento será hacia la derecha. N puede ser mayor al tamaño de la lista. 
+% rotar(+L,+N,-R) <- La lista R es el resultado de rotar la lista L N veces hacia la izquierda. Si N es negativo, el movimiento será hacia la derecha. N puede ser mayor al tamaño de la lista. 
 
 /*Ejemplos:
     ?- rotar([1,2,3,4,5],1,R).
@@ -51,11 +51,58 @@ seleccionar(X, [Y|Ls], [Y|L1]) :- seleccionar(X, Ls, L1).
     R = [4, 5, 1, 2, 3].
 */
 
-rotar(Ls,0,Ls).
-rotar([L|Ls], N, R) :- 
-    rotar(R, N1, R1), 
-    append(Ls, [L], R1), 
-    N is N1+1.
+rotar(L,N,R) :- 
+    reverso(L,Lrev,Largo), %invierto la lista y obtengo largo al mismo tiempo
+    M is N mod Largo,
+    primeros_n_rev(Lrev,M,P), % primera parte del resultado
+    M1 is Largo - M,
+    primeros_n(L,M1,U), % segunda parte del resultado
+    append(P,U,R). %concateno primera y segunda parte
+
+% reverso(+L,?R,?Largo) <- Retorna en R la lista L invertida y retorna en Largo el largo de la lista
+
+/* Ejemplo:
+    ?- reverso([1,2,3,4,5], R, Largo).
+    R = [5,4,3,2,1],
+    Largo = 5.
+*/
+reverso(L,R,Largo) :- reverso_acc(L,[],R, Largo, 0).
+
+reverso_acc([],Acc,Acc, LargoAcc, LargoAcc).
+reverso_acc([X|Xs],Acc,R, Largo, LargoAcc) :-
+    LargoAcc1 is LargoAcc + 1,
+    reverso_acc(Xs,[X|Acc],R, Largo, LargoAcc1).
+
+% primeros_n_rev(+L,+N,?R) <- devuelve en R la lista de los primeros N elementos de la lista L en orden inverso
+
+/*Ejemplos:
+    ?- primeros([1,2,3,4,5],3,R).
+    R = [3,2,1].
+*/
+primeros_n_rev(L,N,R) :- primeros_n_rev_acc(L,0,N,[],R).
+
+primeros_n_rev_acc(_,N,N,AccL,AccL).
+primeros_n_rev_acc([L|Ls],AccN,N, AccL, R) :-
+    AccN1 is AccN + 1,
+    primeros_n_rev_acc(Ls, AccN1, N, [L|AccL], R).
+
+%% primeros_n(+L,+N,?R) <- devuelve en R la lista de los primeros N elementos de la lista L
+
+/*Ejemplos:
+    ?- primeros([1,2,3,4,5],3,R).
+    R = [1,2,3].
+*/
+primeros_n(L,N,R) :- primeros_n_acc(L,0,N,R).
+
+primeros_n_acc(_,N,N,[]).
+primeros_n_acc([L|Ls],AccN,N,[L|R]) :-
+    AccN1 is AccN + 1,
+    primeros_n_acc(Ls, AccN1, N, R).
+
+
+
+
+
 
 
 
