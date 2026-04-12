@@ -99,8 +99,25 @@ primeros_n_acc([L|Ls],AccN,N,[L|R]) :-
     AccN1 is AccN + 1,
     primeros_n_acc(Ls, AccN1, N, R).
 
+% rotar_varias(+L, +Pares,-R) <- dada una Lista L, y una lista Pares de pares (N,Dir), la lista R es el resultado de aplicar una rotación por cada par, donde N indica la cantidad de posiciones, y Dir puede ser izquierda o derecha. 
+/* Ejemplo:
+    ?- rotar_varias([1,2,3,4,5],[(2, izquierda), (1, derecha), (3, izquierda)],R).
+    R = [5, 1, 2, 3, 4].
+*/
 
+rotar_varias(L, [], L).
+rotar_varias(L,[P|Ps], R) :- 
+    rotar_una(L,P,L1), 
+    rotar_varias(L1, Ps, R).
 
+% rotar_una(L, (N,Dir), R) <- dada una Lista L, y un Par (N,Dir), la lista R es el resultado de aplicar una rotación a L, donde N indica la cantidad de posiciones, y Dir puede ser izquierda o derecha. 
+rotar_una(L, (N,izquierda), R) :- 
+    N1 is -1*N, 
+    rotar(L,N1,R).
+rotar_una(L, (N,derecha), R) :- 
+    rotar(L,N,R). 
+
+    
 
 
 
