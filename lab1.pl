@@ -117,6 +117,58 @@ rotar_una(L, (N,izquierda), R) :-
 rotar_una(L, (N,derecha), R) :- 
     rotar(L,N,R). 
 
+% multiplicar_matrices (+A,+B,-R) <- Dadas dos matrices A y B, representadas como listas de listas de números, R es el resultado de multiplicar ambas matrices. De acuerdo a las reglas de multiplicación de matrices, la cantidad de columnas de la matriz A debe ser igual a la cantidad de filas de la matriz B. 
+
+/* Ejemplo:
+    ?- multiplicar_matrices([[1,2,3],[4,5,6]], [[1,2],[3,4],[5,6]], R).
+    R = [[22, 28], [49, 64]].
+*/
+
+
+multiplicar_matrices(A,B,R) :- multiplicar_matrices_acc(A,B,Rx,[]), reverso(Rx,R,_).
+
+
+multiplicar_matrices_acc([],_,Acc,Acc).
+multiplicar_matrices_acc([As|Ass], B, R, Acc) :-
+    multiplicar_fila_x_matriz(As, B, Ri),
+    multiplicar_matrices_acc(Ass, B, R, [Ri|Acc]).
+
+multiplicar_fila_x_matriz(Ai, [Bs|Bss], R) :- 
+    multiplicar_fila_x_matriz_acc(Ai, Bs, [Bs|Bss],0, Ri, []),
+    reverso(Ri,R,_).
+
+multiplicar_fila_x_matriz_acc(_,[],_,_,Acc,Acc).
+multiplicar_fila_x_matriz_acc(Ai, [_|Bis], B, I, Ri, Acc) :- 
+    obtener_columna(B, I, Bj),
+    multiplicar_arrays(Ai, Bj, Rij),
+    ISucc is I + 1,
+    multiplicar_fila_x_matriz_acc(Ai, Bis, B, ISucc, Ri, [Rij|Acc]).
+
+obtener_columna(B, Index, Rs) :- obtener_columna_acc(B,Index, R1, []), reverso(R1,Rs,_).
+
+obtener_columna_acc([], _,Acc,Acc).
+obtener_columna_acc([Bs|Bss], Index, Rs, Acc) :-
+    obtener_columna_acc(Bss, Index, Rs, [Bi|Acc]),
+    obtener_i(Bs, Index, Bi).
+    
+
+obtener_i(L,Index,R) :- obtener_i_acc(L, Index, R, 0).
+
+obtener_i_acc([L|_], Index, L, Index).
+obtener_i_acc([_|Ls],Index, R, Acc) :-
+    Acc1 is Acc + 1,
+    obtener_i_acc(Ls, Index, R, Acc1).
+
+
+multiplicar_arrays([],[],0).
+multiplicar_arrays([A|As], [B|Bs], R) :-
+    multiplicar_arrays(As,Bs, R1),
+    R is A*B + R1.
+
+
+
+
+
     
 
 
