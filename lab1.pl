@@ -123,8 +123,6 @@ rotar_una(L, (N,derecha), R) :-
     ?- multiplicar_matrices([[1,2,3],[4,5,6]], [[1,2],[3,4],[5,6]], R).
     R = [[22, 28], [49, 64]].
 */
-
-
 multiplicar_matrices(A,B,R) :- multiplicar_matrices_acc(A,B,Rx,[]), reverso(Rx,R,_).
 
 
@@ -144,7 +142,9 @@ multiplicar_fila_x_matriz_acc(Ai, [_|Bis], B, I, Ri, Acc) :-
     ISucc is I + 1,
     multiplicar_fila_x_matriz_acc(Ai, Bis, B, ISucc, Ri, [Rij|Acc]).
 
-obtener_columna(B, Index, Rs) :- obtener_columna_acc(B,Index, R1, []), reverso(R1,Rs,_).
+obtener_columna(B, Index, Rs) :- 
+    obtener_columna_acc(B,Index, R1, []),
+    reverso(R1,Rs,_).
 
 obtener_columna_acc([], _,Acc,Acc).
 obtener_columna_acc([Bs|Bss], Index, Rs, Acc) :-
