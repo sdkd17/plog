@@ -1,80 +1,81 @@
+/*
+ Si N es un número que representa el tamaño del tablero, y Puntos una lista de pares (Inicial,Final), siendo Inicial y Final a su vez pares (Fila,Columna), que indican posiciones en el tablero. entonces C será una lista de caminos que resuelve el problema. Cada camino será a su vez una lista de pares (Fila,Columna) que comienza en el primer componente de cada elemento de Puntos, y termina en el segundo. Por convención, las filas del tablero están numeradas de arriba hacia abajo, y las columnas de izquierda a derecha. Los caminos deben devolverse en el mismo orden que los puntos que lo generan.
+*/
+numberLink(N,Puntos,C) :- numberLink_acc(N,Puntos,Puntos,[],C1,[],0), reverso(C1,C).
 
-generar_pares(N,(I,J)) :-
+
+
+
+
+% N Tamanio del tablero
+% Puntos Lista de Puntos iniciales
+% Puntos Lista de Puntos iniciales sobre la que se realiza recursion
+% Caminos Acumulador de puntos que formaran un camino
+% C El camino a retornar
+% Acumulador de Puntos visitados
+% Acumulador de tamanio de Lista de puntos
+numberLink_acc(N,Puntos,[(Ini,Fin)|Ps], Caminos, C, Visitados, VLength) :-
+  select((Ini,Fin), Puntos, PuntosAux), toListPuntos(PuntosAux,PuntosList,_), %Puntos iniciales menos Punto actual como Visitados
+  caminos(N,PuntosList,Fin,Ini, Visitados, VLength, C1, NuevosVisitados, NVLength), 
+  numberLink_acc(N, Puntos, Ps, [C1|Caminos], C, NuevosVisitados, NVLength).
+
+% Paso base => Se cumple si Visite todo el tablero.
+numberLink_acc(N,_,[],Caminos,Caminos,_,VLength) :- VLength is (N*N).
+
+% N Tamanio del tablero
+% Puntos Lista de Puntos iniciales sin el punto actual(Ini,Fin)
+% Fin Punto final
+% Ini Punto Inicial
+% Visitados Lista de puntos ya visitados
+% VLength Largo de lista de puntos visitados
+% NuevoVisitados Nueva lista de visitados luego de encontrado un camino
+% NVLength largo de nueva lista de visitados
+caminos(N, Puntos, Fin, Ini, Visitados, VLength, C, NuevoVisitados, NVLength) :- 
+  VLength1 is VLength + 1,
+  caminos_acc(N, Puntos, Fin, Ini, [Fin|Visitados], VLength1, C, [Fin], NuevoVisitados, NVLength).
+
+
+caminos_acc(N,Puntos,I,F,Visitados, VLength, C, Cacc, NuevoVisitados, NVLength) :-  
+  generar_adyacente_no_visitado(N,I,Visitados,Puntos, P),
+  VLength1 is VLength + 1,
+  caminos_acc(N,Puntos,P,F,[P|Visitados],VLength1, C, [P|Cacc], NuevoVisitados, NVLength).
+
+caminos_acc(_,_,X,X,Visitados,VLength,Cacc,Cacc,Visitados,VLength).
+
+% N Tamanio del tablero
+% P Punto para el que se retornar los adyacentes
+% Lista de puntos visitados
+% Puntos Lista de puntos Iniciales menos los puntos actuales (Ini, Fin)
+% (I,J) Punto adyacente generado
+generar_adyacente_no_visitado(N, P, Visitados, Puntos, (I,J)) :-
   N1 is N,
   between(1,N1,I),
-  between(1,N1,J).
+  between(1,N1,J),
+  adyacente(P,(I,J),N),
+  \+ member((I,J), Puntos),
+  \+ member((I,J), Visitados).
+  
 
 adyacente((I1, J1), (I1, J2), N) :- J2 is J1 + 1, J1 < N.
 adyacente((I1, J1), (I1, J2), N) :- J2 is J1 - 1, J1 > 1.
 adyacente((I1, J1), (I2, J1), N) :- I2 is I1 + 1, I1 < N.
 adyacente((I1, J1), (I2, J1), N) :- I2 is I1 - 1, I1 > 1.
 
-%todos los caminos posibles de Ini a Fin en un tablero de tamanio N
-caminos(N, Ini, Fin, C, L, Visitados) :- caminos_acc(Ini,Fin, N, [Ini], C, 1, L, Visitados).
 
-caminos_acc(X,X,_,Visitados,Visitados,RLenghtAcc,RLenghtAcc, _).
 
-caminos_acc(I,F,N,Visitados,R,RLenghtAcc, RLength, VisitadosPorOtros) :-  
-  generar_pares(N,P),
-  \+ member(P, Visitados),
-  \+ member(P, VisitadosPorOtros),
-  adyacente(I,P,N),
-  RLenght1 is RLenghtAcc + 1,
-  caminos_acc(P,F,N,[P|Visitados],R, RLenght1, RLength, VisitadosPorOtros).
+toListPuntos([],[],0).
+toListPuntos([(I,J)|Puntos], [I,J|L], Length1) :-  
+  toListPuntos(Puntos, L, Length),
+  Length1 is Length + 1. 
 
-  
-numberLink(N,Puntos,C) :- numberLink_acc(N,Puntos,[],C,[],0).
 
-% N tamanio del tablero
-% Lista de Pares inicio fin
-% Caminos Acumulador caminos generados hasta el momento
-% CaminosLength suma de Largo de Caminos para validar que cubro todo el tablero
-% Visitados Acumulador Para validar que no se crucen los caminos
-
-numberLink_acc(N,[],Caminos,Caminos,_,VisitadosLength) 
-  % :- write(VisitadosLength). 
-  :- VisitadosLength is (N*N).
-
-numberLink_acc(N,[(Ini,Fin)|Ps], Caminos, C, Visitados, VisitadosLength) :-
-  caminos(N,Ini,Fin,R,RLength, Visitados), %Busco un camino entre Ini y Fin, queda en R
-  % write(RLength),
-  % writeq('Caminos=>'),write(Ini),writeq('-'),write(Fin),writeln(Caminos),
-  % writeq('R=>'),writeln(R),
-  % writeq('visitados=>'),writeln(Visitados),
-  
-  \+ intersect(R,Visitados), %El nuevo camino no se cruza con otro nodo ya visitado
-  append(R, Visitados, VisitadosAcc), % 
-  VisitadosLength1 is VisitadosLength + RLength,
-  
-  numberLink_acc(N, Ps, [R|Caminos], C, VisitadosAcc, VisitadosLength1).
   
 %interseccion de conjuntos/listas  
 intersect(L1,L2) :-
   member(X,L1),
   member(X,L2).
 
-
-% Agregar a L2 todos los elementos de L1
-% addAll([],L2,L2).
-% addAll([L|L1], L2, R) :-
-%   addAll(L1,[L|L2],R).
-
-
-
-insertar(X,L,[X|L]).
-
-generar_lista(N,L) :- generar_lista_acc(N,N,L,[]).
-
-generar_lista_acc(_,0,AccL,AccL).
-generar_lista_acc(N,Acc,L,AccL) :-
-  Acc > 0,
-  Acc1 is Acc-1,
-  generar_lista_acc(N,Acc1,L,[Acc|AccL]).
-  
-
-
-% generar_lista2(N,L,Acc) :- 
-%   between(0,N,X),
-%   select(X,Acc,L). 
-
-
+reverso(X,R) :- reverso_acc(X,R,[]).
+reverso_acc([],Acc,Acc).
+reverso_acc([X|Xs],R,Acc) :-
+    reverso_acc(Xs,R,[X|Acc]).
