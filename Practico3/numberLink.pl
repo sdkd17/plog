@@ -1,9 +1,13 @@
 /*
- Si N es un número que representa el tamaño del tablero, y Puntos una lista de pares (Inicial,Final), siendo Inicial y Final a su vez pares (Fila,Columna), que indican posiciones en el tablero. entonces C será una lista de caminos que resuelve el problema. Cada camino será a su vez una lista de pares (Fila,Columna) que comienza en el primer componente de cada elemento de Puntos, y termina en el segundo. Por convención, las filas del tablero están numeradas de arriba hacia abajo, y las columnas de izquierda a derecha. Los caminos deben devolverse en el mismo orden que los puntos que lo generan.
+  Si N es un número que representa el tamaño del tablero, y Puntos una lista de pares (Inicial,Final),
+  siendo Inicial y Final a su vez pares (Fila,Columna), que indican posiciones en el tablero. 
+  entonces C será una lista de caminos que resuelve el problema. Cada camino será a su vez 
+  una lista de pares (Fila,Columna) que comienza en el primer componente de cada elemento de Puntos, 
+  y termina en el segundo. Por convención, las filas del tablero están numeradas de arriba hacia abajo, 
+  y las columnas de izquierda a derecha. Los caminos deben devolverse en el mismo orden que los 
+  puntos que lo generan.
 */
 numberLink(N,Puntos,C) :- numberLink_acc(N,Puntos,Puntos,[],C1,[],0), reverso(C1,C).
-
-
 
 
 
@@ -56,24 +60,26 @@ generar_adyacente_no_visitado(N, P, Visitados, Puntos, (I,J)) :-
   \+ member((I,J), Visitados).
   
 
+% Predicado para determinar si dos puntos son adyacentes en un tablero de
+% tamanio N.
 adyacente((I1, J1), (I1, J2), N) :- J2 is J1 + 1, J1 < N.
 adyacente((I1, J1), (I1, J2), N) :- J2 is J1 - 1, J1 > 1.
 adyacente((I1, J1), (I2, J1), N) :- I2 is I1 + 1, I1 < N.
 adyacente((I1, J1), (I2, J1), N) :- I2 is I1 - 1, I1 > 1.
 
 
-
+/* toListPuntos(+Puntos,L,Length) <- Devuelve en L una lista que contiene las posiciones 
+  en el tablero definidas en Puntos y en Length el largo de L. 
+  Ejemplo:
+  ?- tiListPuntos([((1,1),(1,2)),((2,1),(2,2))] L, Length).
+    L = [(2,1),(2,2),(1,1),(2,2)], 4)
+    Length = 4.
+*/
 toListPuntos([],[],0).
 toListPuntos([(I,J)|Puntos], [I,J|L], Length1) :-  
   toListPuntos(Puntos, L, Length),
   Length1 is Length + 1. 
 
-
-  
-%interseccion de conjuntos/listas  
-intersect(L1,L2) :-
-  member(X,L1),
-  member(X,L2).
 
 reverso(X,R) :- reverso_acc(X,R,[]).
 reverso_acc([],Acc,Acc).
