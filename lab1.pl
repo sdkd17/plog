@@ -224,8 +224,8 @@ generar_adyacente_no_visitado(N, P, Visitados, Puntos, (I,J)) :-
   between(1,N1,I),
   between(1,N1,J),
   adyacente(P,(I,J),N),
-  \+ member((I,J), Puntos),
-  \+ member((I,J), Visitados).
+  not_member_pares((I,J), Puntos),
+  not_member_pares((I,J), Visitados).
   
 
 % Predicado para determinar si dos puntos son adyacentes en un tablero de
@@ -248,6 +248,24 @@ toListPuntos([(I,J)|Puntos], [I,J|L], Length1) :-
   toListPuntos(Puntos, L, Length),
   Length1 is Length + 1. 
 
+/* not_member(X,L) <- true si X no esta en L, siendo X un par y L una lista de pares 
+Ejemplo:
+?- not_member((1,1),[(1,2),(1,3),(1,4),(1,5)]).
+true.
+?- not_member((1,2),[1,2),(1,3),(1,4),(1,5)]).
+false.
+*/
+
+not_member_pares(_,[]).
+not_member_pares((I,J),[(Li,Lj)|Ls]) :- 
+    I =\= Li, J =\= Lj, 
+    not_member_pares((I,J),Ls). 
+not_member_pares((I,J),[(I,Lj)|Ls]) :- 
+    J =\= Lj, 
+    not_member_pares((I,J),Ls). 
+not_member_pares((I,J),[(Li,J)|Ls]) :- 
+    I =\= Li, 
+    not_member_pares((I,J),Ls). 
 
 
 

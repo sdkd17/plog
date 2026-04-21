@@ -56,8 +56,8 @@ generar_adyacente_no_visitado(N, P, Visitados, Puntos, (I,J)) :-
   between(1,N1,I),
   between(1,N1,J),
   adyacente(P,(I,J),N),
-  \+ member((I,J), Puntos),
-  \+ member((I,J), Visitados).
+  not_member((I,J), Puntos),
+  not_member((I,J), Visitados).
   
 
 % Predicado para determinar si dos puntos son adyacentes en un tablero de
@@ -85,3 +85,7 @@ reverso(X,R) :- reverso_acc(X,R,[]).
 reverso_acc([],Acc,Acc).
 reverso_acc([X|Xs],R,Acc) :-
     reverso_acc(Xs,R,[X|Acc]).
+
+% not_member(X,L) <- true si X no esta en L
+not_member(_,[]).
+not_member(X,[L|Ls]) :- X =\= L, not_member(X,Ls). 
