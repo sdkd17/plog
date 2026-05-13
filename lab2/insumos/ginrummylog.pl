@@ -117,12 +117,8 @@ valor(c(k,_),10).
 % minimiza el valor del deadwood y las que no.
 get_melds(Mano, Melds, Sobrantes) :-
     % generar subconjuntos de Mano con largo mayor a 2
-    findall(par(SubMano, RestoMano),subconjuntos(Mano,SubMano, RestoMano), Melds).
-    % ,
-    % length(SubMano,L), L > 2,
-    % % validar melds en la particion
-    % is_meld(SubMano),
-    % % get_melds(RestoMano, [SubMano|Melds], Sobrantes).
+    findall(S, subset_melds(Mano,2,S), Melds).
+   
 
     
 
@@ -131,10 +127,16 @@ subconjuntos([],[],[]).
 subconjuntos([L|Ls], [L|Cs],R) :- subconjuntos(Ls,Cs,R).
 subconjuntos([L|Ls], Cs, [L|R]) :- subconjuntos(Ls,Cs,R).
 
+subset([],[]).
+subset([L|Ls], [L|Cs]) :- subset(Ls,Cs).
+subset([_|Ls], Cs) :- subset(Ls,Cs).
+
+
 % subconjuntos_n(+L,+N,?S) - se cumple si S es un subconjunto de L y largo de S es mayor que N
-% subconjuntos_n(L,N,S) :-
-%   subconjuntos(L,S),
-%   length(S,N1), N1 > N.
+subset_melds(L,N,S) :-
+  subset(L,S),
+  length(S,N1), N1 > N,
+  is_meld(S).
 
 % selectSub(+L,+S,?R) - Se cumple si R es L sin los elementos de S
 
