@@ -109,18 +109,26 @@ valor(c(j,_),10).
 valor(c(q,_),10).
 valor(c(k,_),10).
 % ####################################################################################
-% get_melds(+Mano, ?Melds, ?Sobrantes)
 
+% get_melds(+Mano, ?Melds, ?Sobrantes): Melds es una lista de listas; cada sublista
+% es un meld válido. Este predicado puede ser no determinista: una misma mano
+% puede admitir varias descomposiciones. En ningún caso importa el orden de las
+% listas. Observar que este predicado genera todas las descomposiciones, la que
+% minimiza el valor del deadwood y las que no.
 get_melds(Mano, Melds, Sobrantes) :-
     % generar subconjuntos de Mano con largo mayor a 2
-    % subconjuntos_n(Mano,2,S).
+    findall(par(SubMano, RestoMano),subconjuntos(Mano,SubMano, RestoMano), Melds).
+    % ,
+    % length(SubMano,L), L > 2,
     % % validar melds en la particion
-    % is_meld(S).
+    % is_meld(SubMano),
+    % % get_melds(RestoMano, [SubMano|Melds], Sobrantes).
+
     
 
 % subconjuntos(+L, ?S, ?R) - se cumple si S es un subconjunto de L y R es L - S
 subconjuntos([],[],[]).
-subconjuntos([L|Ls], [L|Cs], R) :- subconjuntos(Ls,Cs,R).
+subconjuntos([L|Ls], [L|Cs],R) :- subconjuntos(Ls,Cs,R).
 subconjuntos([L|Ls], Cs, [L|R]) :- subconjuntos(Ls,Cs,R).
 
 % subconjuntos_n(+L,+N,?S) - se cumple si S es un subconjunto de L y largo de S es mayor que N
