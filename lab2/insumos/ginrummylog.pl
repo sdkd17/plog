@@ -111,6 +111,25 @@ valor(c(k,_),10).
 % ####################################################################################
 % get_melds(+Mano, ?Melds, ?Sobrantes)
 
+get_melds(Mano, Melds, Sobrantes) :-
+    % generar subconjuntos de Mano con largo mayor a 2
+    % subconjuntos_n(Mano,2,S).
+    % % validar melds en la particion
+    % is_meld(S).
+    
+
+% subconjuntos(+L, ?S, ?R) - se cumple si S es un subconjunto de L y R es L - S
+subconjuntos([],[],[]).
+subconjuntos([L|Ls], [L|Cs], R) :- subconjuntos(Ls,Cs,R).
+subconjuntos([L|Ls], Cs, [L|R]) :- subconjuntos(Ls,Cs,R).
+
+% subconjuntos_n(+L,+N,?S) - se cumple si S es un subconjunto de L y largo de S es mayor que N
+% subconjuntos_n(L,N,S) :-
+%   subconjuntos(L,S),
+%   length(S,N1), N1 > N.
+
+% selectSub(+L,+S,?R) - Se cumple si R es L sin los elementos de S
+
 % ####################################################################################
 % best_melds(+Mano, ?MejorMelds, ?Sobrante, ?Valor)
 
