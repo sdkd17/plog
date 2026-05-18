@@ -78,7 +78,7 @@ siguiente(c(V1,P), c(V2,P)) :-
     V2 is V1 + 1.
 
 siguiente(c(a,P), c(2,P)).
-siguiente(c(9,P), c(j,P)).
+siguiente(c(10,P), c(j,P)).
 siguiente(c(j,P), c(q,P)).
 siguiente(c(q,P), c(k,P)).
 
@@ -118,18 +118,18 @@ valor(c(k,_),10).
 get_melds(Mano, Melds, Sobrantes) :-
     % generar subconjuntos de Mano con largo mayor a 2
     particion(Mano, P),
-    filter_is_meld(P, Melds, []).
-    
-   
-filter_is_meld([P|Ps],Melds,Acc) :-
+    filter_is_meld(P, Melds, [], Sobrantes, []).
+     
+filter_is_meld([P|Ps],Melds,Acc,Sobrantes,AccS) :-
     is_meld(P),
-    filter_is_meld(Ps,Melds,[P|Acc]).
+    filter_is_meld(Ps,Melds,[P|Acc],Sobrantes,AccS),!.
 
-filter_is_meld([P|Ps],Melds,Acc) :-
+filter_is_meld([P|Ps],Melds,Acc,Sobrantes, AccS) :-
     \+ is_meld(P),
-    filter_is_meld(Ps,Melds,Acc).
+    append(AccS,P,AccS1),
+    filter_is_meld(Ps,Melds,Acc,Sobrantes,AccS1),!.
 
-filter_is_meld([],Acc,Acc).
+filter_is_meld([],Acc,Acc,AccS,AccS).
 
 % particion(+L,?P) - se cumple si P es una particion de L
 particion([L|Ls], P) :-
@@ -142,20 +142,85 @@ dos_opciones(L,Resto,P) :-
     select(Ri,Resto,R1),
     append([[L|Ri]],R1,P).
 
-% validar_particion(+P,+AccM,+Accs,?Melds,?Sobrantes) - 
-% validarParticion(P,Melds,Sobrantes) :-
-%     select(Meld,P,Pr),
-%     validarParticion(Pr,Melds,Sobrantes).
-
-
 % ####################################################################################
-% best_melds(+Mano, ?MejorMelds, ?Sobrante, ?Valor)
+% best_melds(+Mano, ?MejorMelds, ?Sobrante, ?Valor) - De todas las particiones
+% que pueden obtenerse via get_melds nos quedamos con la que minimiza el valor del 
+% deadwood. Si hay varias particiones que minimizan este valor puede devolverse 
+% cualquiera de ellas. Tiene la restricción de que MejorMelds no puede 
+% tener más de 10 cartas.
+
+best_melds(Mano,MejorMelds,Sobrante,Valor) :- 
+    format('Mano best_melds: ~w~n', [Mano]),
+    findall((M,S), get_melds(Mano,M,S),Melds),
+    best_melds_rec(Melds,MejorMelds,Sobrante,Valor,[],[],110).
+
+best_melds_rec([(M,S)|Melds],MejorMelds,Sobrante,Valor,BestMeld,Leftovers,Min) :-
+    valor_deadwood(S,V),
+    % write(M), write('-'), write(S), write('=>'), write(V), write('\n'), 
+    minMeld(M,S,V,BestMeld,Leftovers,Min,Mnuevo,Snuevo,MinNuevo),
+    best_melds_rec(Melds,MejorMelds,Sobrante,Valor,Mnuevo,Snuevo,MinNuevo).
+best_melds_rec([],M,S,V,M,S,V).
+
+% minMeld(+M1,+S1,+V1,+M2,+S2,+V2,?R1,?R2,?R3) - Se cumple si R es el minimo entre M1 y M2 en valor
+minMeld(M1,S1,V1,_,_,V2,M1,S1,V1) :- V1 < V2. 
+minMeld(_,_,V1,M2,S2,V2,M2,S2,V2) :- V1 >= V2. 
 
 % ####################################################################################
 % robar(+Mano, +Descarte, +CartasVistas, +Estrategia, ?Lugar)
+% Este predicado decide de donde vamos a robar la carta. Descarte: carta en el tope del 
+% descarte (término c/2). CartasVistas: lista de cartas vistas según la definición de 
+% arriba. Estrategia ∈ {random, greedy, pro}. Lugar ∈ {mazo, descarte}.
+robar(_,_,_,random,Lugar) :-
+    random_between(0,1,R),robar_random(R,Lugar).
+
+robar_random(0,mazo).
+robar_random(1,descarte).
+
 
 % ####################################################################################
 % descartar(+OldMano, +CartasVistas, +Estrategia, ?NewMano, ?NewDescarte)
+% Este predicado decide qué carta vamos a descartar. En el momento del descarte, OldMano 
+% tiene 11 cartas (ya robó). Debe cumplirse que: NewDescarte es una carta que aparece 
+% en OldMano; NewMano es OldMano sin una ocurrencia de esa carta; por tanto, NewMano tiene 10 cartas.
+
+descartar(OldMano,CartasVistas,random,NewMano,NewDescarte) :- 
+    select_random(OldMano, NewMano, NewDescarte).
+
+    
+% select_random(OldMano, NewMano, Carta) - se cumple si oldMano + {Carta} = OldMano
+% TODO: Probar con random permutation.
+select_random(OldMano, NewMano, Carta) :-
+    random_between(0,10,R),  
+    select_n(Carta,R,OldMano,NewMano).
+
+% select_n(S,N,L,R) - Se cumple si S es el elemento de la posicion N en L y R es L sin S
+select_n(S,N,L,R) :- select_n_rec(S,N,L,R,0).
+
+select_n_rec(S,N,[L|Ls],[L|R],Pos) :-
+    N > Pos,!,
+    N1 is Pos + 1,
+    select_n_rec(S,N,Ls,R,N1).
+select_n_rec(L,Pos,[L|Ls],Ls,Pos).
+
+    
 
 % ####################################################################################
 % cerrar(+Mano, +CartasVistas, +Estrategia, ?Decision)
+% Este predicado decide si continuamos jugando o si cortamos. 
+% Mano tiene 10 cartas (ya descartó en ese turno). 
+% Decision ∈ {continuar, cortar}. Si Decision = cortar, 
+% debe cumplirse la regla de legalidad: deadwood ≤ 10.
+
+cerrar(Mano,_,random,Decision) :- 
+    random_between(0,1,R),
+    decision_random(R,D),
+    best_melds(Mano, MejorMelds,_,Valor),
+    cerrar_random(D,Valor,Decision),!.
+
+decision_random(0,cortar).
+decision_random(1,continuar).
+
+cerrar_random(continuar,_,continuar).
+cerrar_random(cortar,Valor,cortar) :- Valor =< 10.
+cerrar_random(cortar,Valor,continuar) :- Valor > 10.
+
