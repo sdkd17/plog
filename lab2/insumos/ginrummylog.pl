@@ -29,6 +29,10 @@ is_set_rec([],_,L) :- L > 2, L < 5.
 % igual_valor(+Carta1, +Carta2) - Se cumple si valor de carta 1 es igual al valor de carta 2
 igual_valor(c(V,P1), c(V,P2)) :- P1 \= P2.
 
+% igual_palo(+Carta1, +Carta2) - Se cumple si palo de carta 1 es igual al palo de carta 2
+igual_palo(c(_,P), c(_,P)).
+
+
 % is_run(+Cartas) - Se cumple si Cartas es un run valido (tres o más cartas siguiente en valor y del mismo palo)
 
 is_run(Cartas) :- 
@@ -90,8 +94,7 @@ siguiente(c(q,P), c(k,P)).
 %   J,Q,K:10cadauna
 
 % valor_deadwood(+Cartas, ?Valor) - Valor es la suma de valores de puntos de las cartas en Cartas según la tabla de deadwood.
-valor_deadwood(Cartas, Valor) :- 
-    suma_valores(Cartas,0,Valor).
+valor_deadwood(Cartas, Valor) :- suma_valores(Cartas,0,Valor).
 
 suma_valores([C|Cs],Acc,Valor) :-
     valor(C,Vc),
@@ -127,18 +130,6 @@ get_melds(Mano, Melds, Sobrantes) :-
     particion(Mano, P),
     filter_melds(P, Melds,SobrantesSet),
     flatten(SobrantesSet,Sobrantes).
-    % filter_is_meld(P, Melds, [], Sobrantes, []).
-
-
-% filter_is_meld([P|Ps],Melds,Acc,Sobrantes,AccS) :-
-%     is_meld(P),
-%     filter_is_meld(Ps,Melds,[P|Acc],Sobrantes,AccS),!.
-
-% filter_is_meld([P|Ps],Melds,Acc,Sobrantes, AccS) :-
-%     \+ is_meld(P),
-%     filter_is_meld(Ps,Melds,Acc,Sobrantes,[P|AccS]),!.
-
-% filter_is_meld([],Acc,Acc,AccS,AccS).
 
 filter_melds([P|Ps], Melds,Sobrantes)  :- filtrar(P,Ps,Melds,Sobrantes).
 filter_melds([],[],[]).
@@ -150,17 +141,32 @@ filtrar(P,Ps,[P|Melds],Sobrantes) :-
 filtrar(P,Ps,Melds,[P|Sobrantes]) :-
     filter_melds(Ps,Melds,Sobrantes).
 
-% particion(+L,?P) - se cumple si P es una particion de L
+% particion(+L,?P) - se cumple si P es una particion de L agrupando por numero de carta o por palo
 particion([L|Ls], P) :-
     particion(Ls,Resto),
-    dos_opciones(L,Resto,P).
+    tres_opciones(L,Resto,P).
 particion([],[]).
 
-dos_opciones(L,Resto,[[L]|Resto]) :- length(Resto, N), N < 4. % Particiones con hasta 4 subconjuntos
-dos_opciones(L,Resto,P) :- 
-    select(Ri,Resto,R1),
+% TODO: cambiarle el nombre a este metodo
+tres_opciones(L,Resto,[[L]|Resto]).
+
+tres_opciones(L,Resto,P) :- 
+    select_mismo_numero(L,Ri,Resto,R1),
     append([[L|Ri]],R1,P).
 
+tres_opciones(L,Resto,P) :- 
+    select_mismo_palo(L,Ri,Resto,R1),
+    append([[L|Ri]],R1,P).
+
+% select_mismo_numero()
+select_mismo_numero(C,[Ci|Ri],Resto,R1) :-
+    select([Ci|Ri],Resto,R1),
+    igual_valor(C,Ci).
+
+% select_mismo_palo()
+select_mismo_palo(C,[Ci|Ri],Resto,R1) :-
+    select([Ci|Ri],Resto,R1),
+    igual_palo(C,Ci).
 
 % ####################################################################################
 % best_melds(+Mano, ?MejorMelds, ?Sobrante, ?Valor) - De todas las particiones
@@ -170,7 +176,7 @@ dos_opciones(L,Resto,P) :-
 % tener más de 10 cartas.
 
 best_melds(Mano,MejorMelds,Sobrante,Valor) :- 
-    format('Mano best_melds: ~w~n', [Mano]),
+    % format('Mano best_melds: ~w~n', [Mano]),
     findall((M,S), get_melds(Mano,M,S),Melds),
     best_melds_rec(Melds,MejorMelds,Sobrante,Valor,[],[],110).
 
