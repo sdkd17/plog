@@ -75,6 +75,19 @@ min(c(k,P),c(j,P),c(j,P)).
 min(c(q,P),c(k,P),c(q,P)).
 min(c(k,P),c(q,P),c(q,P)).
 
+max(c(A,P),c(a,_),c(A,P)).
+max(c(a,_),c(A,P),c(A,P)).
+max(c(A,P),c(B,_),c(A,P)) :- integer(A), integer(B), A >= B.
+max(c(A,_),c(B,P),c(B,P)) :- integer(A), integer(B), A < B.
+max(c(A,_),c(j,P),c(j,P)) :- integer(A).
+max(c(j,P),c(A,_),c(j,P)) :- integer(A).
+max(c(A,_),c(q,P),c(q,P)) :- integer(A).
+max(c(q,P),c(A,_),c(q,P)) :- integer(A).
+max(c(_,_),c(k,P),c(k,P)).
+max(c(k,P),c(_,_),c(k,P)).
+max(c(j,_),c(q,P),c(q,P)).
+max(c(q,P),c(j,_),c(q,P)).
+
 % siguiente(+Carta1, +Carta2) - Se cumple si Carta2 es siguiente a Carta1 (Mismo Palo, valor consecutivo)
 siguiente(c(V1,P), c(V2,P)) :-
     integer(V1),
@@ -143,29 +156,35 @@ filtrar(P,Ps,Melds,[P|Sobrantes]) :-
 
 % particion(+L,?P) - se cumple si P es una particion de L agrupando por numero de carta o por palo
 particion([L|Ls], P) :-
-    particion(Ls,Resto),
-    tres_opciones(L,Resto,P).
+    particion(Ls,Prec),
+    tres_opciones(L,Prec,P).
 particion([],[]).
 
-% TODO: cambiarle el nombre a este metodo
-tres_opciones(L,Resto,[[L]|Resto]).
+% tres_opciones(+L,+Particion,?NuevaParticion) - NuevaParticion es la particion P agregando el elemento L
+% Agrega a L como:
+%    - un nuevo conjunto
+%    - Lo agrega a un conjunto de P que contenga una carta del mismo palo que L
+%    - Lo agrega a un conjunto de P que contenga una carta del mismo valor
+tres_opciones(L,Particion,[[L]|Particion]).
 
-tres_opciones(L,Resto,P) :- 
-    select_mismo_numero(L,Ri,Resto,R1),
-    append([[L|Ri]],R1,P).
+tres_opciones(L,Particion,P) :- 
+    select_mismo_numero(L,Pi,Particion,R1),
+    append([[L|Pi]],R1,P).
 
-tres_opciones(L,Resto,P) :- 
-    select_mismo_palo(L,Ri,Resto,R1),
-    append([[L|Ri]],R1,P).
+tres_opciones(L,Particion,P) :- 
+    select_mismo_palo(L,Pi,Particion,R1),
+    append([[L|Pi]],R1,P).
 
-% select_mismo_numero()
-select_mismo_numero(C,[Ci|Ri],Resto,R1) :-
-    select([Ci|Ri],Resto,R1),
+% select_mismo_numero(+C,?P,?Particion,?R) - selecciona en P un elemento de Particion que contiene 
+% una carta del mismo valor que C. R es Particion - {P}
+select_mismo_numero(C,[Ci|Pi],Particion,R1) :-
+    select([Ci|Pi],Particion,R1),
     igual_valor(C,Ci).
 
-% select_mismo_palo()
-select_mismo_palo(C,[Ci|Ri],Resto,R1) :-
-    select([Ci|Ri],Resto,R1),
+% select_mismo_numero(+C,?P,?Particion,?R) - selecciona en P un elemento de Particion que contiene 
+% una carta del mismo palo que C. R es Particion - {P}
+select_mismo_palo(C,[Ci|Pi],Particion,R1) :-
+    select([Ci|Pi],Particion,R1),
     igual_palo(C,Ci).
 
 % ####################################################################################
@@ -176,7 +195,7 @@ select_mismo_palo(C,[Ci|Ri],Resto,R1) :-
 % tener más de 10 cartas.
 
 best_melds(Mano,MejorMelds,Sobrante,Valor) :- 
-    % format('Mano best_melds: ~w~n', [Mano]),
+    % format('Mano => ~w~n',[Mano]),
     findall((M,S), get_melds(Mano,M,S),Melds),
     best_melds_rec(Melds,MejorMelds,Sobrante,Valor,[],[],110).
 
@@ -196,11 +215,27 @@ minMeld(_,_,V1,M2,S2,V2,M2,S2,V2) :- V1 >= V2.
 % Este predicado decide de donde vamos a robar la carta. Descarte: carta en el tope del 
 % descarte (término c/2). CartasVistas: lista de cartas vistas según la definición de 
 % arriba. Estrategia ∈ {random, greedy, pro}. Lugar ∈ {mazo, descarte}.
-robar(_,_,_,random,Lugar) :-
-    random_between(0,1,R),robar_random(R,Lugar).
+
+% Estrategia RANDOM
+robar(_,_,_,random,Lugar) :- random_between(0,1,R),robar_random(R,Lugar).
+
+% Estrategia GREEDY 
+% ¿Cual es la opcion localmente optima para robar en cada mano?
+% selecciono el tope del descarte si disminuye el deadwood
+robar(Mano,Descarte,_,greedy,Lugar) :-
+    best_melds(Mano,_,_,DeadwoodMano),
+    best_melds([Descarte|Mano],_,_,DeadwoodDescarte),
+    robar_greedy(DeadwoodMano,DeadwoodDescarte,Lugar).
+
+
+% Estrategia PRO
 
 robar_random(0,mazo).
 robar_random(1,descarte).
+
+robar_greedy(DeadwoodMano,DeadwoodDescarte,descarte) :- DeadwoodMano > DeadwoodDescarte,!.
+robar_greedy(_,_,mazo).
+
 
 
 % ####################################################################################
@@ -209,12 +244,21 @@ robar_random(1,descarte).
 % tiene 11 cartas (ya robó). Debe cumplirse que: NewDescarte es una carta que aparece 
 % en OldMano; NewMano es OldMano sin una ocurrencia de esa carta; por tanto, NewMano tiene 10 cartas.
 
-descartar(OldMano,CartasVistas,random,NewMano,NewDescarte) :- 
+% Estrategia RANDOM
+descartar(OldMano,_,random,NewMano,NewDescarte) :- 
     select_random(OldMano, NewMano, NewDescarte).
 
+% Estrategia GREEDY
+% ¿Cual es la opcion localmente optima para descartar en cada mano?
+% Descarto la que tiene mayor valor y no rompe melds
+descartar(OldMano,_,greedy,NewMano,NewDescarte) :- 
+    best_melds(OldMano,_,Sobrantes,_),!,
+    maxL(Sobrantes,c(a,_),NewDescarte),
+    select(NewDescarte,OldMano,NewMano).
     
+% Estrategia PRO
+
 % select_random(OldMano, NewMano, Carta) - se cumple si oldMano + {Carta} = OldMano
-% TODO: Probar con random permutation.
 select_random(OldMano, NewMano, Carta) :-
     random_between(0,10,R),  
     select_n(Carta,R,OldMano,NewMano).
@@ -228,7 +272,17 @@ select_n_rec(S,N,[L|Ls],[L|R],Pos) :-
     select_n_rec(S,N,Ls,R,N1).
 select_n_rec(L,Pos,[L|Ls],Ls,Pos).
 
-    
+
+% select_Max(+Cartas, ?Max, ?R) - Se cumple si Max es la carta Maxima de Cartas y R es Cartas sin Max  
+select_max(Cartas, Max, R) :- 
+    maxL(Cartas, c(a,_), Max),
+    select(Max, Cartas, R). 
+
+% MaxL(+Cartas,+MaxAcc,?M) - M es la carta mayor de la lista Cartas
+maxL([H|T],Max,M) :- 
+    max(H,Max,Max1),!, % una vez que encuentra un Maximo, no busca en el resto de las opciones
+    maxL(T,Max1,M).
+maxL([],X,X).
 
 % ####################################################################################
 % cerrar(+Mano, +CartasVistas, +Estrategia, ?Decision)
@@ -237,11 +291,20 @@ select_n_rec(L,Pos,[L|Ls],Ls,Pos).
 % Decision ∈ {continuar, cortar}. Si Decision = cortar, 
 % debe cumplirse la regla de legalidad: deadwood ≤ 10.
 
+% Estrategia RANDOM
 cerrar(Mano,_,random,Decision) :- 
     random_between(0,1,R),
     decision_random(R,D),
-    best_melds(Mano, MejorMelds,_,Valor),
+    best_melds(Mano, _,_,Valor),
     cerrar_random(D,Valor,Decision),!.
+
+% Estrategia GREEDY    
+cerrar(Mano,_,greedy,continuar) :-
+    best_melds(Mano,_,_,Valor),
+    Valor > 10,!.
+cerrar(_,_,greedy,cortar).
+
+% Estrategia PRO
 
 decision_random(0,cortar).
 decision_random(1,continuar).
@@ -249,4 +312,3 @@ decision_random(1,continuar).
 cerrar_random(continuar,_,continuar).
 cerrar_random(cortar,Valor,cortar) :- Valor =< 10.
 cerrar_random(cortar,Valor,continuar) :- Valor > 10.
-
