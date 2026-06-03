@@ -12,7 +12,6 @@
 is_meld(Cartas) :- is_set(Cartas).
 is_meld(Cartas) :- is_run(Cartas).
 
-
 % is_set(+Cartas) - Se cumple si Cartas es un set valido (tres o cuatro cartas del mismo valor y palos distintos)
 % Ejemplos
 %   is_set([c(a,c), c(a,d), c(a,t)]) → true (set de tres)
@@ -87,6 +86,7 @@ max(c(_,_),c(k,P),c(k,P)).
 max(c(k,P),c(_,_),c(k,P)).
 max(c(j,_),c(q,P),c(q,P)).
 max(c(q,P),c(j,_),c(q,P)).
+max(c(A,P),c(A,_),c(A,P)).
 
 % siguiente(+Carta1, +Carta2) - Se cumple si Carta2 es siguiente a Carta1 (Mismo Palo, valor consecutivo)
 siguiente(c(V1,P), c(V2,P)) :-
@@ -114,16 +114,6 @@ suma_valores([C|Cs],Acc,Valor) :-
     Acc1 is Vc + Acc,
     suma_valores(Cs,Acc1,Valor).
 suma_valores([],Acc,Acc).
-
-% acc(+Cartas, +Predicado, +Acumulador, ?Valor) - Valor es el resultado de aplicar el predicado a los elementos de Cartas, se va acumulando el resultado en Acumulador 
-acc([],_,Acc,Acc).
-acc([C|Cs],Op,Acc,Valor) :-
-    valor(C, Vc),!,
-    T =.. [Op,Vc,Acc,Acc1],
-    T,
-    acc(Cs,Op,Acc1,Valor).
-
-suma(X,Y,Z) :- Z is X+Y.
 
 %valor(+Carta, ?Valor) - se cumple si valor es el valor entero de Carta
 valor(c(a,_),1).
@@ -168,23 +158,23 @@ particion([],[]).
 tres_opciones(L,Particion,[[L]|Particion]).
 
 tres_opciones(L,Particion,P) :- 
-    select_mismo_numero(L,Pi,Particion,R1),
-    append([[L|Pi]],R1,P).
+    select_mismo_numero(L,Pi,Particion,R),
+    append([[L|Pi]],R,P).
 
 tres_opciones(L,Particion,P) :- 
-    select_mismo_palo(L,Pi,Particion,R1),
-    append([[L|Pi]],R1,P).
+    select_mismo_palo(L,Pi,Particion,R),
+    append([[L|Pi]],R,P).
 
 % select_mismo_numero(+C,?P,?Particion,?R) - selecciona en P un elemento de Particion que contiene 
 % una carta del mismo valor que C. R es Particion - {P}
-select_mismo_numero(C,[Ci|Pi],Particion,R1) :-
-    select([Ci|Pi],Particion,R1),
+select_mismo_numero(C,[Ci|Pi],Particion,R) :-
+    select([Ci|Pi],Particion,R),
     igual_valor(C,Ci).
 
 % select_mismo_numero(+C,?P,?Particion,?R) - selecciona en P un elemento de Particion que contiene 
 % una carta del mismo palo que C. R es Particion - {P}
-select_mismo_palo(C,[Ci|Pi],Particion,R1) :-
-    select([Ci|Pi],Particion,R1),
+select_mismo_palo(C,[Ci|Pi],Particion,R) :-
+    select([Ci|Pi],Particion,R),
     igual_palo(C,Ci).
 
 % ####################################################################################
@@ -227,16 +217,15 @@ robar(Mano,Descarte,_,greedy,Lugar) :-
     best_melds([Descarte|Mano],_,_,DeadwoodDescarte),
     robar_greedy(DeadwoodMano,DeadwoodDescarte,Lugar).
 
-
 % Estrategia PRO
+% Cual seria una mejor estrategia que greedy para robar?
+%  
 
 robar_random(0,mazo).
 robar_random(1,descarte).
 
 robar_greedy(DeadwoodMano,DeadwoodDescarte,descarte) :- DeadwoodMano > DeadwoodDescarte,!.
 robar_greedy(_,_,mazo).
-
-
 
 % ####################################################################################
 % descartar(+OldMano, +CartasVistas, +Estrategia, ?NewMano, ?NewDescarte)
@@ -252,11 +241,15 @@ descartar(OldMano,_,random,NewMano,NewDescarte) :-
 % ¿Cual es la opcion localmente optima para descartar en cada mano?
 % Descarto la que tiene mayor valor y no rompe melds
 descartar(OldMano,_,greedy,NewMano,NewDescarte) :- 
-    best_melds(OldMano,_,Sobrantes,_),!,
+    best_melds(OldMano,Melds,Sobrantes,_),!,
     maxL(Sobrantes,c(a,_),NewDescarte),
-    select(NewDescarte,OldMano,NewMano).
+    select(NewDescarte,OldMano,NewMano),!.
     
 % Estrategia PRO
+% Mejor estrategia que greedy para descartar?
+% Lo que hace greedy lo tenemos que mantener
+% Utilizar de alguna forma CartasVistas para descartar la de mayor valor que no puede formar
+% un meld dado que la que falta para formar el meld esta en cartas vistas
 
 % select_random(OldMano, NewMano, Carta) - se cumple si oldMano + {Carta} = OldMano
 select_random(OldMano, NewMano, Carta) :-
@@ -280,7 +273,7 @@ select_max(Cartas, Max, R) :-
 
 % MaxL(+Cartas,+MaxAcc,?M) - M es la carta mayor de la lista Cartas
 maxL([H|T],Max,M) :- 
-    max(H,Max,Max1),!, % una vez que encuentra un Maximo, no busca en el resto de las opciones
+    max(H,Max,Max1), % una vez que encuentra un Maximo, no busca en el resto de las opciones
     maxL(T,Max1,M).
 maxL([],X,X).
 
@@ -305,7 +298,8 @@ cerrar(Mano,_,greedy,continuar) :-
 cerrar(_,_,greedy,cortar).
 
 % Estrategia PRO
-
+% Cual seria una estrategia mejor que greedy para cerrar?
+% 
 decision_random(0,cortar).
 decision_random(1,continuar).
 
