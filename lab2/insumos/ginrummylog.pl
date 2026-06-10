@@ -223,13 +223,29 @@ robar(Mano,Descarte,_,greedy,Lugar) :-
 % Luego, si la carta del descarte es siguiente o si es el mismo numero que alguna de las sobrantes la robo, si no robo del mazo 
 % Ademas tener en cuenta que si la que falta para formar un meld esta en cartas vistas no la deberia robar del descarte.
 robar(Mano,Descarte,CartasVistas,pro,descarte) :-
-    robar(Mano, Descarte, CartasVistas,greedy,descarte),!.
+    robar(Mano,Descarte,CartasVistas,greedy,descarte),!.
 
 robar(Mano,Descarte,CartasVistas,pro,descarte) :-
     best_melds(Mano,Melds,Sobrantes,DeadwoodMano),
-    select(Carta, Sobrantes,_),
+    particion_sobrantes(Sobrantes, P),
     futuro_meld(Descarte, C, CartasVistas),!.
 robar(_,_,_,pro,mazo).
+
+particion_sobrantes([L|Ls], P) :-
+    particion_sobrantes(Ls,Prec),
+    tres_opciones(L,Prec,P).
+particion_sobrantes([],[]).
+
+tres_opciones_sobrantes(L,Particion,[[L]|Particion]).
+
+tres_opciones_sobrantes(L,Particion,P) :- 
+    select_mismo_numero(L,Pi,Particion,R),
+    append([[L|Pi]],R,P).
+
+tres_opciones_sobrantes(L,Particion,P) :- 
+    select_mismo_palo_consecutivas(L,Pi,Particion,R),
+    append([[L|Pi]],R,P).
+
 
 % futuro_meld(+Carta1,+Carta2) - Se cumple si Carta1 y carta 2 son siguentes o son el mismo numero. Estas cartas podrian formar un meld.
 futuro_meld(Carta1, Carta2) :- siguiente(Carta1,Carta2), \+ completar_run(Carta1,Carta2,CartasVistas).
@@ -277,8 +293,8 @@ descartar(OldMano,_,greedy,NewMano,NewDescarte) :-
 % Estrategia PRO
 % Mejor estrategia que greedy para descartar?
 % Lo que hace greedy lo tenemos que mantener
-% Utilizar de alguna forma CartasVistas para descartar la de mayor valor que no puede formar
-% un meld dado que la que falta para formar el meld esta en cartas vistas
+% Utilizar de alguna forma CartasVistas para descartar la de mayor valor que no puede 
+% formar un meld dado que la que falta para formar el meld esta en cartas vistas
 
 % select_random(OldMano, NewMano, Carta) - se cumple si oldMano + {Carta} = OldMano
 select_random(OldMano, NewMano, Carta) :-
@@ -327,7 +343,8 @@ cerrar(_,_,greedy,cortar).
 
 % Estrategia PRO
 % Cual seria una estrategia mejor que greedy para cerrar?
-% 
+% Seguir jugando aunque ya tenga menos de 10 puntos en sobrantes, hasta cuando? Que corte el otro siempre? Si no importa quien corte, gana el que tiene menos puntos
+
 decision_random(0,cortar).
 decision_random(1,continuar).
 
