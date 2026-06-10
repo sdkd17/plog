@@ -219,7 +219,36 @@ robar(Mano,Descarte,_,greedy,Lugar) :-
 
 % Estrategia PRO
 % Cual seria una mejor estrategia que greedy para robar?
-%  
+% Igual que greedy, si la carta del descarte forma un meld, robo del descarte.
+% Luego, si la carta del descarte es siguiente o si es el mismo numero que alguna de las sobrantes la robo, si no robo del mazo 
+% Ademas tener en cuenta que si la que falta para formar un meld esta en cartas vistas no la deberia robar del descarte.
+robar(Mano,Descarte,CartasVistas,pro,descarte) :-
+    robar(Mano, Descarte, CartasVistas,greedy,descarte),!.
+
+robar(Mano,Descarte,CartasVistas,pro,descarte) :-
+    best_melds(Mano,Melds,Sobrantes,DeadwoodMano),
+    select(Carta, Sobrantes,_),
+    futuro_meld(Descarte, C, CartasVistas),!.
+robar(_,_,_,pro,mazo).
+
+% futuro_meld(+Carta1,+Carta2) - Se cumple si Carta1 y carta 2 son siguentes o son el mismo numero. Estas cartas podrian formar un meld.
+futuro_meld(Carta1, Carta2) :- siguiente(Carta1,Carta2), \+ completar_run(Carta1,Carta2,CartasVistas).
+futuro_meld(Carta1, Carta2) :- siguiente(Carta2,Carta1), \+ completar_run(Carta1,Carta2,CartasVistas).
+futuro_meld(Carta1, Carta2) :- mismo_numero(Carta1,Carta2), \+ completar_set(Carta1,Carta2,CartasVistas).
+
+% completar_meld(+Carta1,Carta2,CartasVistas) - se cumple si existe una carta en cartas vistas que completa un meld con carta1 y carta2
+% completar_meld(Carta1,Carta2,CartasVistas) :- completar_run(Carta1,Carta2,CartasVistas).
+% completar_meld(Carta1,Carta2,CartasVistas) :- completar_set(Carta1,Carta2,CartasVistas).
+
+completar_run(Carta1,Carta2,CartasVistas) :-
+    select(Carta3,CartasVistas,_),
+    is_run([Carta1,Carta2,Carta3]),!.
+
+completar_set(Carta1,Carta2,CartasVistas) :-
+    select(Carta3,CartasVistas,Resto),
+    select(Carta4,Resto,_),
+    is_set([Carta1,Carta2,Carta3,Carta4]),!.
+
 
 robar_random(0,mazo).
 robar_random(1,descarte).
@@ -265,15 +294,14 @@ select_n_rec(S,N,[L|Ls],[L|R],Pos) :-
     select_n_rec(S,N,Ls,R,N1).
 select_n_rec(L,Pos,[L|Ls],Ls,Pos).
 
-
 % select_Max(+Cartas, ?Max, ?R) - Se cumple si Max es la carta Maxima de Cartas y R es Cartas sin Max  
-select_max(Cartas, Max, R) :- 
-    maxL(Cartas, c(a,_), Max),
-    select(Max, Cartas, R). 
+% select_max(Cartas, Max, R) :- 
+%     maxL(Cartas, c(a,_), Max),
+%     select(Max, Cartas, R). 
 
 % MaxL(+Cartas,+MaxAcc,?M) - M es la carta mayor de la lista Cartas
 maxL([H|T],Max,M) :- 
-    max(H,Max,Max1), % una vez que encuentra un Maximo, no busca en el resto de las opciones
+    max(H,Max,Max1),
     maxL(T,Max1,M).
 maxL([],X,X).
 

@@ -34,14 +34,20 @@ test(is_meld_run_de_3_desordenado,[nondet]) :-
 test(is_meld_run_de_5,[nondet]) :-
     is_meld([c(3,c), c(4,c), c(5,c), c(6,c), c(7,c)]).
 
-test(is_meld_falla_por_palos_distintos, [fail],[nondet]) :-
+test(is_meld_falla_por_palos_distintos, [fail,nondet]) :-
     is_meld([c(3,c), c(4,d), c(5,c)]).
 
-test(is_meld_falla_por_hueco, [fail],[nondet]) :-
+test(is_meld_falla_por_hueco, [fail,nondet]) :-
     is_meld([c(3,p), c(4,p), c(6,p)]).
 
-test(is_meld_falla_por_largo_2, [fail],[nondet]) :-
+test(is_meld_falla_por_largo_2, [fail,nondet]) :-
     is_meld([c(9,c), c(9,d)]).
+
+test(is_meld_falla_por_escalera_circular, [fail,nondet]) :-
+    is_meld([c(q,c), c(k,c), c(a,c)]).
+
+test(is_meld_escalera_con_as, [nondet]) :-
+    is_meld([c(3,c), c(2,c), c(a,c)]).
 
 %%%%%%%%%%%%%%
 %%% valor_deadwood/2
@@ -66,7 +72,8 @@ test(get_melds_vacio,[nondet]) :-
 
 test(get_melds_sin_melds_devuelve_todo_sobrante,[nondet]) :-
     Mano = [c(2,c), c(5,d), c(7,p), c(9,t)],
-    get_melds(Mano, [], Mano).
+    get_melds(Mano, [], Mano2),
+    same_cards(Mano, Mano2).
 
 test(get_melds_encuentra_un_meld,[nondet]) :-
     Mano = [c(3,p), c(4,p), c(5,p), c(k,d)],
