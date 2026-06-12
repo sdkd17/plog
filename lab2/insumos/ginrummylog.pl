@@ -57,22 +57,22 @@ minL([H|T],Min,M) :-
 minL([],X,X).
 
 % min(+C1,+C2,C) - se cumple si C es la carta de menor valor entre C1 y C2, y C1 y C2 son del mismo palo
-min(c(_,P),c(a,P),c(a,P)).
-min(c(a,P),c(_,P),c(a,P)).
-min(c(A,P),c(B,P),c(A,P)) :- integer(A), integer(B), A =< B.
-min(c(A,P),c(B,P),c(B,P)) :- integer(A), integer(B), A > B.
-min(c(A,P),c(j,P),c(A,P)) :- integer(A).
-min(c(j,P),c(A,P),c(A,P)) :- integer(A).
-min(c(A,P),c(q,P),c(A,P)) :- integer(A).
-min(c(q,P),c(A,P),c(A,P)) :- integer(A).
-min(c(A,P),c(k,P),c(A,P)) :- integer(A).
-min(c(k,P),c(A,P),c(A,P)) :- integer(A).
-min(c(j,P),c(q,P),c(j,P)).
-min(c(q,P),c(j,P),c(j,P)).
-min(c(j,P),c(k,P),c(j,P)).
-min(c(k,P),c(j,P),c(j,P)).
-min(c(q,P),c(k,P),c(q,P)).
-min(c(k,P),c(q,P),c(q,P)).
+min(c(_,_),c(a,P),c(a,P)).
+min(c(a,P),c(_,_),c(a,P)).
+min(c(A,P),c(B,_),c(A,P)) :- integer(A), integer(B), A =< B.
+min(c(A,_),c(B,P),c(B,P)) :- integer(A), integer(B), A > B.
+min(c(A,P),c(j,_),c(A,P)) :- integer(A).
+min(c(j,_),c(A,P),c(A,P)) :- integer(A).
+min(c(A,P),c(q,_),c(A,P)) :- integer(A).
+min(c(q,_),c(A,P),c(A,P)) :- integer(A).
+min(c(A,P),c(k,_),c(A,P)) :- integer(A).
+min(c(k,_),c(A,P),c(A,P)) :- integer(A).
+min(c(j,P),c(q,_),c(j,P)).
+min(c(q,_),c(j,P),c(j,P)).
+min(c(j,P),c(k,_),c(j,P)).
+min(c(k,_),c(j,P),c(j,P)).
+min(c(q,P),c(k,_),c(q,P)).
+min(c(k,_),c(q,P),c(q,P)).
 
 max(c(A,P),c(a,_),c(A,P)).
 max(c(a,_),c(A,P),c(A,P)).
@@ -247,7 +247,7 @@ robar(_,_,_,pro,mazo).
 % futuro_meld(+Carta1,+Carta2) - Se cumple si Carta1 y carta 2 son siguentes o son el mismo numero. Estas cartas podrian formar un meld.
 futuro_meld(Carta1, Carta2,CartasVistas) :- siguiente(Carta1,Carta2), \+ completar_run(Carta1,Carta2,CartasVistas).
 futuro_meld(Carta1, Carta2,CartasVistas) :- siguiente(Carta2,Carta1), \+ completar_run(Carta1,Carta2,CartasVistas).
-futuro_meld(Carta1, Carta2,CartasVistas) :- mismo_numero(Carta1,Carta2), \+ completar_set(Carta1,Carta2,CartasVistas).
+futuro_meld(Carta1, Carta2,CartasVistas) :- igual_valor(Carta1,Carta2), \+ completar_set(Carta1,Carta2,CartasVistas).
 
 % completar_meld(+Carta1,Carta2,CartasVistas) - se cumple si existe una carta en cartas vistas que completa un meld con carta1 y carta2
 % completar_meld(Carta1,Carta2,CartasVistas) :- completar_run(Carta1,Carta2,CartasVistas).
@@ -373,7 +373,7 @@ select_n_rec(L,Pos,[L|Ls],Ls,Pos).
 
 % MaxL(+Cartas,+MaxAcc,?M) - M es la carta mayor de la lista Cartas
 maxL([H|T],Max,M) :- 
-    max(H,Max,Max1),
+    max(H,Max,Max1),!,
     maxL(T,Max1,M).
 maxL([],X,X).
 
@@ -402,25 +402,37 @@ cerrar(_,_,greedy,cortar).
 % Si ya esta en menos de diez puntos
 % - para todo set si es de tres y la que falta no esta en cartas vistas seguir
 % - si existe run, y la que sigue o la antecedente no esta en vartas vistas seguir
-cerrar(Mano,CartasVistas,pro,continuar) :-
-    best_melds(Mano, Melds,_,Valor),
-    cerrar_pro(Melds,CartasVistas,Valor,Decision).
-   
+cerrar(Mano,CartasVistas,pro,Decision) :-
+    best_melds(Mano, Melds,Sobrantes,Valor),
+    format('Melds => ~w~n', [Melds]),
+    format('Sobrantes => ~w~n', [Sobrantes]),   
+    findall(D,cerrar_pro(Melds,CartasVistas,Valor,D), Decisiones),
+    format('Decisiones => ~w~n', [Decisiones]),   
+    seleccionar_decision_pro(Decisiones,Decision).
+
+seleccionar_decision_pro(Decisiones, continuar) :- member(continuar,Decisiones),!.
+seleccionar_decision_pro(_, cortar). 
+
+cerrar_pro(_,_,0,cortar) :- !.
 cerrar_pro(_,_,Valor,continuar) :- Valor > 10,!.
+
 % Deadwood menor que 10 
-cerrar_pro(Melds,CartasVistas,Valor,Decision) :- 
-    select([c(N,_)|Ms],Melds,_),
-    cerrar_pro_set_or_run([c(N,_)|Ms], CartasVistas,Decision).
+cerrar_pro(Melds,CartasVistas,_,Decision) :- 
+    member(M,Melds),
+    cerrar_pro_set_or_run(M, CartasVistas, Decision).
 
-cerrar_pro_set_or_run([c(N,_)|Ms], CartasVistas, continuar).
-    is_set([c(N,_)|Ms]),
-    \+ member(c(N,_),CartasVistas).
+cerrar_pro_set_or_run([c(N,P)|Ms], CartasVistas, continuar) :-
+    is_set([c(N,P)|Ms]),
+    \+ member(c(N,_),CartasVistas),!.
 
-cerrar_pro_set_or_run([c(N,_)|Ms], CartasVistas, continuar).
-    is_run([c(N,_)|Ms]),
-    anterior(c(N,_),A),
-    \+ member(A,CartasVistas).
-
+cerrar_pro_set_or_run(Meld, CartasVistas, continuar) :-
+    is_run(Meld),
+    minL(Meld,c(k,_),Min),
+    anterior(Min,AnteriorMin),
+    \+ member(AnteriorMin,CartasVistas),!,
+    maxL(Meld,c(a,_),Max),
+    siguiente(Max,SiguienteMax),
+    \+ member(SiguienteMax,CartasVistas),!.
 cerrar_pro_set_or_run(_,_,cortar).
 
 decision_random(0,cortar).
