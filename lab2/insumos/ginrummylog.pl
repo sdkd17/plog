@@ -240,18 +240,26 @@ robar(Mano,Descarte,_,greedy,Lugar) :-
 robar(Mano,Descarte,CartasVistas,pro,descarte) :-
     robar(Mano, Descarte, CartasVistas,greedy,descarte),!.
 
+% robar(Mano,Descarte,CartasVistas,pro,descarte) :-
+%     best_melds(Mano,_,Sobrantes,_),
+%     select(Carta, Sobrantes,_),
+%     futuro_meld(Descarte, Carta, CartasVistas),!.
+
+% Aca ya se que Descarte no es parte de los melds
 % Busco proyectos de meld, si Descarte es menor que sobranteSobrantes mas grande, elijo la del descarte
 robar(Mano,Descarte,CartasVistas,pro,descarte) :-
     best_melds(Mano,_,Sobrantes,_),
-    select(Carta, Sobrantes,_),
-    futuro_meld(Descarte, Carta, CartasVistas),!.
-
-robar(Mano,Descarte,CartasVistas,pro,descarte) :-
-    best_melds(Mano,_,Sobrantes,_),
     best_melds_sobrantes(Sobrantes, _, SobrantesSobrantes),
+    \+ es_igual_valor_unico_sobrante(Descarte,Sobrantes),
     robar_pro_descarte(Descarte,Sobrantes,CartasVistas,SobrantesSobrantes),!.
 
 robar(_,_,_,pro,mazo).
+
+% La sobrante no forma parte de los melds, tengo que robar del mazo si el descarte es igual valor
+es_igual_valor_unico_sobrante(Descarte,Sobrantes) :-
+    format('Sobrantes: ~w~n', [Sobrantes]),
+    select(S,Sobrantes,[]),
+    igual_valor(S,Descarte),!.
 
 %Si el descarte mas una de las sobras puede formar un meld
 robar_pro_descarte(Descarte,Sobrantes,CartasVistas,_) :-
@@ -317,9 +325,9 @@ descartar(OldMano,_,greedy,NewMano,NewDescarte) :-
 % un meld dado que la que falta para formar el meld esta en cartas vistas
 descartar(OldMano, CartasVistas, pro, NewMano, NewDescarte) :-
     best_melds(OldMano,_,Sobrantes,_),
-    format('Sobrantes = ~w~n', [Sobrantes]),
+    % format('Sobrantes = ~w~n', [Sobrantes]),
     best_melds_sobrantes(Sobrantes, MeldsProyecto, SobrantesSobrantes),
-    format('Proyectos de Meld: ~w | SobrantesSobrantes:~w~n', [MeldsProyecto, SobrantesSobrantes]),
+    % format('Proyectos de Meld: ~w | SobrantesSobrantes:~w~n', [MeldsProyecto, SobrantesSobrantes]),
     descartar_pro(OldMano, CartasVistas, MeldsProyecto, SobrantesSobrantes, NewMano, NewDescarte),!.
 
 % best_melds_sobrantes(+Sobrantes, ?MeldsProyecto, ?SobrantesSobrantes) - Se cumple si MeldsProyecto es una lista de proyectos de Meld
@@ -436,10 +444,10 @@ cerrar(_,_,greedy,cortar).
 % - si existe run, y la que sigue o la antecedente no esta en vartas vistas seguir
 cerrar(Mano,CartasVistas,pro,Decision) :-
     best_melds(Mano, Melds,Sobrantes,Valor),
-    format('Melds => ~w~n', [Melds]),
-    format('Sobrantes => ~w~n', [Sobrantes]),   
+    % format('Melds => ~w~n', [Melds]),
+    % format('Sobrantes => ~w~n', [Sobrantes]),   
     findall(D,cerrar_pro(Melds,CartasVistas,Valor,D), Decisiones),
-    format('Decisiones => ~w~n', [Decisiones]),   
+    % format('Decisiones => ~w~n', [Decisiones]),   
     seleccionar_decision_pro(Decisiones,Decision).
 
 seleccionar_decision_pro(Decisiones, continuar) :- member(continuar,Decisiones),!.
