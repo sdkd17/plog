@@ -224,11 +224,13 @@ robar(_,_,_,random,Lugar) :- random_between(0,1,R),robar_random(R,Lugar).
 
 % Estrategia GREEDY 
 % ¿Cual es la opcion localmente optima para robar en cada mano?
-% selecciono el tope del descarte si disminuye el deadwood
+% selecciono el tope del descarte si no aumenta el deadwood
 robar(Mano,Descarte,_,greedy,Lugar) :-
     best_melds(Mano,_,_,DeadwoodMano),
+    % format('DeadwoodMano = ~w~n', [DeadwoodMano]),
     best_melds([Descarte|Mano],_,_,DeadwoodDescarte),
-    robar_greedy(DeadwoodMano,DeadwoodDescarte,Lugar).
+    % format('DeadwoodDescarte = ~w~n', [DeadwoodDescarte]),
+    robar_greedy(DeadwoodMano,DeadwoodDescarte,Lugar),!.
 
 % Estrategia PRO
 % Cual seria una mejor estrategia que greedy para robar?
@@ -238,13 +240,34 @@ robar(Mano,Descarte,_,greedy,Lugar) :-
 robar(Mano,Descarte,CartasVistas,pro,descarte) :-
     robar(Mano, Descarte, CartasVistas,greedy,descarte),!.
 
+% Busco proyectos de meld, si Descarte es menor que sobranteSobrantes mas grande, elijo la del descarte
 robar(Mano,Descarte,CartasVistas,pro,descarte) :-
     best_melds(Mano,_,Sobrantes,_),
     select(Carta, Sobrantes,_),
     futuro_meld(Descarte, Carta, CartasVistas),!.
+
+robar(Mano,Descarte,CartasVistas,pro,descarte) :-
+    best_melds(Mano,_,Sobrantes,_),
+    best_melds_sobrantes(Sobrantes, _, SobrantesSobrantes),
+    robar_pro_descarte(Descarte,Sobrantes,CartasVistas,SobrantesSobrantes),!.
+
 robar(_,_,_,pro,mazo).
 
-% futuro_meld(+Carta1,+Carta2) - Se cumple si Carta1 y carta 2 son siguentes o son el mismo numero. Estas cartas podrian formar un meld.
+%Si el descarte mas una de las sobras puede formar un meld
+robar_pro_descarte(Descarte,Sobrantes,CartasVistas,_) :-
+    select(Carta, Sobrantes,_),
+    futuro_meld(Descarte, Carta, CartasVistas),!.
+    % format('Futuro Meld ~w~n', [[Descarte,Carta]]),!.
+
+% si el descarte no puede formar un meld, pero es menor que la mayor de las sobras, elijo descarte
+robar_pro_descarte(Descarte,_,_,SobrantesSobrantes) :-
+    maxL(SobrantesSobrantes,c(a,_),Max),
+    min(Descarte,Max,Descarte),!.
+
+
+
+% futuro_meld(+Carta1,+Carta2) - Se cumple si Carta1 y carta 2 son siguentes o son el mismo numero y la carta restante para 
+% formar el meld no esta en cartas vistas. Estas cartas podrian formar un meld.
 futuro_meld(Carta1, Carta2,CartasVistas) :- siguiente(Carta1,Carta2), \+ completar_run(Carta1,Carta2,CartasVistas).
 futuro_meld(Carta1, Carta2,CartasVistas) :- siguiente(Carta2,Carta1), \+ completar_run(Carta1,Carta2,CartasVistas).
 futuro_meld(Carta1, Carta2,CartasVistas) :- igual_valor(Carta1,Carta2), \+ completar_set(Carta1,Carta2,CartasVistas).
@@ -266,7 +289,7 @@ completar_set(Carta1,Carta2,CartasVistas) :-
 robar_random(0,mazo).
 robar_random(1,descarte).
 
-robar_greedy(DeadwoodMano,DeadwoodDescarte,descarte) :- DeadwoodMano > DeadwoodDescarte,!.
+robar_greedy(DeadwoodMano,DeadwoodDescarte,descarte) :- DeadwoodMano >= DeadwoodDescarte,!. %igual si la carta del descarte forma meld, el Deadwood no aumenta
 robar_greedy(_,_,mazo).
 
 % ####################################################################################
@@ -294,8 +317,10 @@ descartar(OldMano,_,greedy,NewMano,NewDescarte) :-
 % un meld dado que la que falta para formar el meld esta en cartas vistas
 descartar(OldMano, CartasVistas, pro, NewMano, NewDescarte) :-
     best_melds(OldMano,_,Sobrantes,_),
+    format('Sobrantes = ~w~n', [Sobrantes]),
     best_melds_sobrantes(Sobrantes, MeldsProyecto, SobrantesSobrantes),
-    descartar_pro(OldMano, CartasVistas, MeldsProyecto, SobrantesSobrantes, NewMano, NewDescarte).
+    format('Proyectos de Meld: ~w | SobrantesSobrantes:~w~n', [MeldsProyecto, SobrantesSobrantes]),
+    descartar_pro(OldMano, CartasVistas, MeldsProyecto, SobrantesSobrantes, NewMano, NewDescarte),!.
 
 % best_melds_sobrantes(+Sobrantes, ?MeldsProyecto, ?SobrantesSobrantes) - Se cumple si MeldsProyecto es una lista de proyectos de Meld
 % conjuntos de parejas de cartas del mismo palo e igual numero o cartas consecutivas, Sobrantes las cartas que quedan sin pareja. Se 
@@ -328,13 +353,20 @@ descartar_pro(OldMano,_, [], SobrantesSobrantes, NewMano, NewDescarte) :-
     maxL(SobrantesSobrantes,c(a,_),NewDescarte),
     select(NewDescarte,OldMano,NewMano),!.
 
-%Todas son proyectos de meld
+% Todos son proyectos de Meld y existe uno que no se puede completar porque la que falta esta en cartas vistas
+descartar_pro(OldMano, CartasVistas, MeldsProyecto,[], NewMano, NewDescarte) :-
+    select(P,MeldsProyecto,_),
+    completa_meld(P,CartasVistas),!,
+    maxL(P,c(a,_),NewDescarte),        
+    select(NewDescarte, OldMano, NewMano),!.
+
+%Todas son proyectos de meld que pueden completarse
 descartar_pro(OldMano,_, MeldsProyecto, [], NewMano, NewDescarte) :-
     flatten(MeldsProyecto, Sobrantes),
     maxL(Sobrantes,c(a,_),NewDescarte),
     select(NewDescarte,OldMano,NewMano),!.
 
-% Hay melds y SobranteSobrantes
+% Hay melds y SobranteSobrantes, para un meld la carta que lo completa esta en cartas vistas
 descartar_pro(OldMano, CartasVistas, MeldsProyecto,_, NewMano, NewDescarte) :-
     select(P,MeldsProyecto,_),
     completa_meld(P,CartasVistas),!,
@@ -349,8 +381,8 @@ descartar_pro(OldMano, _, _, SobrantesSobrantes, NewMano, NewDescarte) :-
 % completa_meld(+ProyectoMeld, +CartasVistas) - Se cumple si existe una carta en CartasVistas que completa ProyectoMeld
 completa_meld(ProyectoMeld, CartasVistas) :-
     select(C,CartasVistas,_),
-    append(ProyectoMeld,[C],Meld),
-    is_meld(Meld).
+    % append(ProyectoMeld,[C],Meld),
+    is_meld([C|ProyectoMeld]).
  
 % select_random(OldMano, NewMano, Carta) - se cumple si oldMano + {Carta} = OldMano
 select_random(OldMano, NewMano, Carta) :-
