@@ -331,9 +331,7 @@ descartar(OldMano, CartasVistas, pro, NewMano, NewDescarte) :-
     descartar_pro(OldMano, CartasVistas, MeldsProyecto, SobrantesSobrantes, NewMano, NewDescarte),!.
 
 % proyectos_meld(+Sobrantes, ?MeldsProyecto, ?SobrantesSobrantes) - Se cumple si MeldsProyecto es una lista de proyectos de Meld
-% conjuntos de parejas de cartas del mismo palo e igual numero o cartas consecutivas, Sobrantes las cartas que quedan sin pareja. Se 
-% minimiza el valor de SobrantesSobrantes. Es analogo a best_melds con la diferencia de que se consideran melds parejas de cartas consecutivas 
-% o cartas de igual numero.
+% conjuntos de parejas de cartas del mismo palo e igual numero o cartas consecutivas, Sobrantes las cartas que quedan sin pareja. 
 
 % best_melds_sobrantes(Sobrantes, MeldsProyecto, SobrantesSobrantes) :-
 %     findall((M,S), get_melds_sobrantes(Sobrantes,M,S), Melds),
