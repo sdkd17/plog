@@ -250,7 +250,7 @@ robar(Mano,Descarte,CartasVistas,pro,descarte) :-
 robar(Mano,Descarte,CartasVistas,pro,descarte) :-
     best_melds(Mano,_,Sobrantes,_),
     best_melds_sobrantes(Sobrantes, _, SobrantesSobrantes),
-    \+ es_igual_valor_unico_sobrante(Descarte,Sobrantes),
+    \+ es_igual_valor_unico_sobrante(Descarte,SobrantesSobrantes),
     robar_pro_descarte(Descarte,Sobrantes,CartasVistas,SobrantesSobrantes),!.
 
 robar(_,_,_,pro,mazo).
@@ -264,8 +264,8 @@ es_igual_valor_unico_sobrante(Descarte,Sobrantes) :-
 %Si el descarte mas una de las sobras puede formar un meld
 robar_pro_descarte(Descarte,Sobrantes,CartasVistas,_) :-
     select(Carta, Sobrantes,_),
-    futuro_meld(Descarte, Carta, CartasVistas),!.
-    % format('Futuro Meld ~w~n', [[Descarte,Carta]]),!.
+    futuro_meld(Descarte, Carta, CartasVistas),%!.
+    format('Futuro Meld ~w~n', [[Descarte,Carta]]),!.
 
 % si el descarte no puede formar un meld, pero es menor que la mayor de las sobras, elijo descarte
 robar_pro_descarte(Descarte,_,_,SobrantesSobrantes) :-
@@ -325,18 +325,33 @@ descartar(OldMano,_,greedy,NewMano,NewDescarte) :-
 % un meld dado que la que falta para formar el meld esta en cartas vistas
 descartar(OldMano, CartasVistas, pro, NewMano, NewDescarte) :-
     best_melds(OldMano,_,Sobrantes,_),
-    % format('Sobrantes = ~w~n', [Sobrantes]),
-    best_melds_sobrantes(Sobrantes, MeldsProyecto, SobrantesSobrantes),
-    % format('Proyectos de Meld: ~w | SobrantesSobrantes:~w~n', [MeldsProyecto, SobrantesSobrantes]),
+     format('Sobrantes = ~w~n', [Sobrantes]),
+    proyectos_meld(Sobrantes, MeldsProyecto, SobrantesSobrantes),
+     format('Proyectos de Meld: ~w | SobrantesSobrantes:~w~n', [MeldsProyecto, SobrantesSobrantes]),
     descartar_pro(OldMano, CartasVistas, MeldsProyecto, SobrantesSobrantes, NewMano, NewDescarte),!.
 
-% best_melds_sobrantes(+Sobrantes, ?MeldsProyecto, ?SobrantesSobrantes) - Se cumple si MeldsProyecto es una lista de proyectos de Meld
+% proyectos_meld(+Sobrantes, ?MeldsProyecto, ?SobrantesSobrantes) - Se cumple si MeldsProyecto es una lista de proyectos de Meld
 % conjuntos de parejas de cartas del mismo palo e igual numero o cartas consecutivas, Sobrantes las cartas que quedan sin pareja. Se 
 % minimiza el valor de SobrantesSobrantes. Es analogo a best_melds con la diferencia de que se consideran melds parejas de cartas consecutivas 
 % o cartas de igual numero.
-best_melds_sobrantes(Sobrantes, MeldsProyecto, SobrantesSobrantes) :-
-    findall((M,S), get_melds_sobrantes(Sobrantes,M,S), Melds),
-    best_melds_rec(Melds,MeldsProyecto,SobrantesSobrantes,_,[],[],110).
+
+% best_melds_sobrantes(Sobrantes, MeldsProyecto, SobrantesSobrantes) :-
+%     findall((M,S), get_melds_sobrantes(Sobrantes,M,S), Melds),
+%     best_melds_rec(Melds,MeldsProyecto,SobrantesSobrantes,_,[],[],110).
+
+proyectos_meld(Sobrantes, MeldsProyecto, SobrantesSobrantes) :-
+    findall(M, get_melds_sobrantes(Sobrantes,M,_), Melds),
+    proyecto_melds_rec(Melds,MeldsProyecto,[]),
+    flatten(MeldsProyecto,MeldsProyectoF),
+    subtract(Sobrantes,MeldsProyectoF,SobrantesSobrantes).
+
+proyecto_melds_rec([M|Melds],MeldsProyecto,Macc) :-
+    \+ member(M,Macc),
+    proyecto_melds_rec(Melds,MeldsProyecto, [M|Macc]),!.
+proyecto_melds_rec([_|Melds],MeldsProyecto,Macc) :-
+    proyecto_melds_rec(Melds,MeldsProyecto, Macc),!.
+proyecto_melds_rec([],M,M).
+
 
 % analogo a get_melds, con la diferencia de que se consideran melds parejas de cartas consecutivas 
 % o cartas de igual numero.
