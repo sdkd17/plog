@@ -263,12 +263,66 @@ robar(Mano,Descarte,_,greedy,Lugar) :-
 
 % Estrategia PRO
 % Cual seria una mejor estrategia que greedy para robar?
-% Miro que pasaria si robo el descarte y despues descarto la mejor carta
-robar(Mano,Descarte,CartasVistas,pro,Lugar) :-
-    puntaje_mano(Mano,CartasVistas,PuntajeActual),
-    descartar([Descarte|Mano],CartasVistas,pro,ManoNueva,_),
-    puntaje_mano(ManoNueva,CartasVistas,PuntajeDescarte),
-    robar_pro(PuntajeActual,PuntajeDescarte,Lugar).
+
+% Igual que greedy, si la carta del descarte forma un meld, robo del descarte.
+% Luego, si la carta del descarte es siguiente o si es el mismo numero que alguna de las sobrantes la robo, si no robo del mazo 
+% Ademas tener en cuenta que si la que falta para formar un meld esta en cartas vistas no la deberia robar del descarte.
+robar(Mano,Descarte,CartasVistas,pro,descarte) :-
+    robar(Mano, Descarte, CartasVistas,greedy,descarte),!.
+
+% robar(Mano,Descarte,CartasVistas,pro,descarte) :-
+%     best_melds(Mano,_,Sobrantes,_),
+%     select(Carta, Sobrantes,_),
+%     futuro_meld(Descarte, Carta, CartasVistas),!.
+
+% Aca ya se que Descarte no es parte de los melds
+% Busco proyectos de meld, si Descarte es menor que sobranteSobrantes mas grande, elijo la del descarte
+robar(Mano,Descarte,CartasVistas,pro,descarte) :-
+    best_melds(Mano,_,Sobrantes,_),
+    best_melds_sobrantes(Sobrantes, _, SobrantesSobrantes),
+    \+ es_igual_valor_unico_sobrante(Descarte,SobrantesSobrantes),
+    robar_pro_descarte(Descarte,Sobrantes,CartasVistas,SobrantesSobrantes),!.
+
+robar(_,_,_,pro,mazo).
+
+% La sobrante no forma parte de los melds, tengo que robar del mazo si el descarte es igual valor
+es_igual_valor_unico_sobrante(Descarte,Sobrantes) :-
+    format('Sobrantes: ~w~n', [Sobrantes]),
+    select(S,Sobrantes,[]),
+    igual_valor(S,Descarte),!.
+
+%Si el descarte mas una de las sobras puede formar un meld
+robar_pro_descarte(Descarte,Sobrantes,CartasVistas,_) :-
+    select(Carta, Sobrantes,_),
+    futuro_meld(Descarte, Carta, CartasVistas),%!.
+    format('Futuro Meld ~w~n', [[Descarte,Carta]]),!.
+
+% si el descarte no puede formar un meld, pero es menor que la mayor de las sobras, elijo descarte
+robar_pro_descarte(Descarte,_,_,SobrantesSobrantes) :-
+    maxL(SobrantesSobrantes,c(a,_),Max),
+    min(Descarte,Max,Descarte),!.
+
+
+
+% futuro_meld(+Carta1,+Carta2) - Se cumple si Carta1 y carta 2 son siguentes o son el mismo numero y la carta restante para 
+% formar el meld no esta en cartas vistas. Estas cartas podrian formar un meld.
+futuro_meld(Carta1, Carta2,CartasVistas) :- siguiente(Carta1,Carta2), \+ completar_run(Carta1,Carta2,CartasVistas).
+futuro_meld(Carta1, Carta2,CartasVistas) :- siguiente(Carta2,Carta1), \+ completar_run(Carta1,Carta2,CartasVistas).
+futuro_meld(Carta1, Carta2,CartasVistas) :- igual_valor(Carta1,Carta2), \+ completar_set(Carta1,Carta2,CartasVistas).
+
+% completar_meld(+Carta1,Carta2,CartasVistas) - se cumple si existe una carta en cartas vistas que completa un meld con carta1 y carta2
+% completar_meld(Carta1,Carta2,CartasVistas) :- completar_run(Carta1,Carta2,CartasVistas).
+% completar_meld(Carta1,Carta2,CartasVistas) :- completar_set(Carta1,Carta2,CartasVistas).
+
+completar_run(Carta1,Carta2,CartasVistas) :-
+    select(Carta3,CartasVistas,_),
+    is_run([Carta1,Carta2,Carta3]),!.
+
+completar_set(Carta1,Carta2,CartasVistas) :-
+    select(Carta3,CartasVistas,Resto),
+    select(Carta4,Resto,_),
+    is_set([Carta1,Carta2,Carta3,Carta4]),!.
+
 
 robar_random(0,mazo).
 robar_random(1,descarte).
@@ -304,14 +358,89 @@ descartar(OldMano, _, greedy, NewMano, NewDescarte) :-
 % Lo que hace greedy lo tenemos que mantener
 % Utilizar de alguna forma CartasVistas para descartar la de mayor valor que no puede formar
 % un meld dado que la que falta para formar el meld esta en cartas vistas
-descartar(OldMano,CartasVistas,pro,NewMano,NewDescarte) :-
-    findall((Puntaje,ValorCarta,Carta,Mano),
-        (select(Carta,OldMano,Mano),
-         puntaje_mano(Mano,CartasVistas,Puntaje),
-         valor(Carta,Valor),
-         ValorCarta is -Valor),
-        Opciones),
-    sort(Opciones,[(_,_,NewDescarte,NewMano)|_]),!.
+
+descartar(OldMano, CartasVistas, pro, NewMano, NewDescarte) :-
+    best_melds(OldMano,_,Sobrantes,_),
+     format('Sobrantes = ~w~n', [Sobrantes]),
+    proyectos_meld(Sobrantes, MeldsProyecto, SobrantesSobrantes),
+     format('Proyectos de Meld: ~w | SobrantesSobrantes:~w~n', [MeldsProyecto, SobrantesSobrantes]),
+    descartar_pro(OldMano, CartasVistas, MeldsProyecto, SobrantesSobrantes, NewMano, NewDescarte),!.
+
+% proyectos_meld(+Sobrantes, ?MeldsProyecto, ?SobrantesSobrantes) - Se cumple si MeldsProyecto es una lista de proyectos de Meld
+% conjuntos de parejas de cartas del mismo palo e igual numero o cartas consecutivas, Sobrantes las cartas que quedan sin pareja. 
+
+% best_melds_sobrantes(Sobrantes, MeldsProyecto, SobrantesSobrantes) :-
+%     findall((M,S), get_melds_sobrantes(Sobrantes,M,S), Melds),
+%     best_melds_rec(Melds,MeldsProyecto,SobrantesSobrantes,_,[],[],110).
+
+proyectos_meld(Sobrantes, MeldsProyecto, SobrantesSobrantes) :-
+    findall(M, get_melds_sobrantes(Sobrantes,M,_), Melds),
+    proyecto_melds_rec(Melds,MeldsProyecto,[]),
+    flatten(MeldsProyecto,MeldsProyectoF),
+    subtract(Sobrantes,MeldsProyectoF,SobrantesSobrantes).
+
+proyecto_melds_rec([M|Melds],MeldsProyecto,Macc) :-
+    \+ member(M,Macc),
+    proyecto_melds_rec(Melds,MeldsProyecto, [M|Macc]),!.
+proyecto_melds_rec([_|Melds],MeldsProyecto,Macc) :-
+    proyecto_melds_rec(Melds,MeldsProyecto, Macc),!.
+proyecto_melds_rec([],M,M).
+
+
+% analogo a get_melds, con la diferencia de que se consideran melds parejas de cartas consecutivas 
+% o cartas de igual numero.
+get_melds_sobrantes(Cartas, Melds, Sobrantes) :-
+    particion(Cartas, P),
+    filter_melds(P, Melds, SobrantesSet, is_meld_proyect),
+    flatten(SobrantesSet,Sobrantes).
+
+is_meld_proyect([C1,C2]) :- siguiente(C1,C2),!. 
+is_meld_proyect([C1,C2]) :- siguiente(C2,C1),!.
+is_meld_proyect([C1,C2]) :- igual_valor(C1,C2),!. 
+
+
+% casos 
+    % Todas son SobrantesSobrantes
+    % Todas son MeldsProyecto
+    % Hay MeldsProyecto y Sobrantes
+    %     Si para un meldProyecto la que falta ya salio, descarto mas grande de ese proyecto
+    %     Si no, descarto mayor de SobrantesSobrantes
+% Todas son SobrantesSobrantes
+descartar_pro(OldMano,_, [], SobrantesSobrantes, NewMano, NewDescarte) :-
+    maxL(SobrantesSobrantes,c(a,_),NewDescarte),
+    select(NewDescarte,OldMano,NewMano),!.
+
+% Todos son proyectos de Meld y existe uno que no se puede completar porque la que falta esta en cartas vistas
+descartar_pro(OldMano, CartasVistas, MeldsProyecto,[], NewMano, NewDescarte) :-
+    select(P,MeldsProyecto,_),
+    completa_meld(P,CartasVistas),!,
+    maxL(P,c(a,_),NewDescarte),        
+    select(NewDescarte, OldMano, NewMano),!.
+
+%Todas son proyectos de meld que pueden completarse
+descartar_pro(OldMano,_, MeldsProyecto, [], NewMano, NewDescarte) :-
+    flatten(MeldsProyecto, Sobrantes),
+    maxL(Sobrantes,c(a,_),NewDescarte),
+    select(NewDescarte,OldMano,NewMano),!.
+
+% Hay melds y SobranteSobrantes, para un meld la carta que lo completa esta en cartas vistas
+descartar_pro(OldMano, CartasVistas, MeldsProyecto,_, NewMano, NewDescarte) :-
+    select(P,MeldsProyecto,_),
+    completa_meld(P,CartasVistas),!,
+    maxL(P,c(a,_),NewDescarte),        
+    select(NewDescarte, OldMano, NewMano),!.
+
+% Ningun proyecto de meld se completa con cartas vistas, descarto la mayor de SobrantesSobrantes
+descartar_pro(OldMano, _, _, SobrantesSobrantes, NewMano, NewDescarte) :-
+    maxL(SobrantesSobrantes,c(a,_),NewDescarte),       
+    select(NewDescarte, OldMano, NewMano),!.
+
+% completa_meld(+ProyectoMeld, +CartasVistas) - Se cumple si existe una carta en CartasVistas que completa ProyectoMeld
+completa_meld(ProyectoMeld, CartasVistas) :-
+    select(C,CartasVistas,_),
+    % append(ProyectoMeld,[C],Meld),
+    is_meld([C|ProyectoMeld]).
+ 
 
 % select_random(OldMano, NewMano, Carta) - se cumple si oldMano + {Carta} = OldMano
 select_random(OldMano, NewMano, Carta) :-
