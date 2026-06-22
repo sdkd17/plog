@@ -17,13 +17,20 @@ is_meld(Cartas) :- is_run(Cartas).
 %   is_set([c(a,c), c(a,d), c(a,t)]) → true (set de tres)
 %   is_set([c(a,d), c(3,t), c(4,t)]) → false.
 
-is_set([C|Cs]) :- is_set_rec(Cs,C,1).
+is_set(Cartas) :-
+    length(Cartas,L),
+    L > 2,
+    L < 5,
+    mismo_valor_todas(Cartas),
+    palos_distintos(Cartas).
 
-is_set_rec([C1|Cs],C,Length) :- 
-    igual_valor(C1,C),
-    L1 is Length + 1,
-    is_set_rec(Cs,C,L1).
-is_set_rec([],_,L) :- L > 2, L < 5.
+mismo_valor_todas([_]).
+mismo_valor_todas([c(V,_),c(V,_)|Cs]) :- mismo_valor_todas([c(V,_)|Cs]).
+
+palos_distintos([]).
+palos_distintos([c(_,P)|Cs]) :-
+    \+ member(c(_,P),Cs),
+    palos_distintos(Cs).
 
 % igual_valor(+Carta1, +Carta2) - Se cumple si valor de carta 1 es igual al valor de carta 2
 igual_valor(c(V,P1), c(V,P2)) :- P1 \= P2.
@@ -57,36 +64,23 @@ minL([H|T],Min,M) :-
 minL([],X,X).
 
 % min(+C1,+C2,C) - se cumple si C es la carta de menor valor entre C1 y C2, y C1 y C2 son del mismo palo
-min(c(_,_),c(a,P),c(a,P)).
-min(c(a,P),c(_,_),c(a,P)).
-min(c(A,P),c(B,_),c(A,P)) :- integer(A), integer(B), A =< B.
-min(c(A,_),c(B,P),c(B,P)) :- integer(A), integer(B), A > B.
-min(c(A,P),c(j,_),c(A,P)) :- integer(A).
-min(c(j,_),c(A,P),c(A,P)) :- integer(A).
-min(c(A,P),c(q,_),c(A,P)) :- integer(A).
-min(c(q,_),c(A,P),c(A,P)) :- integer(A).
-min(c(A,P),c(k,_),c(A,P)) :- integer(A).
-min(c(k,_),c(A,P),c(A,P)) :- integer(A).
-min(c(j,P),c(q,_),c(j,P)).
-min(c(q,_),c(j,P),c(j,P)).
-min(c(j,P),c(k,_),c(j,P)).
-min(c(k,_),c(j,P),c(j,P)).
-min(c(q,P),c(k,_),c(q,P)).
-min(c(k,_),c(q,P),c(q,P)).
-
-max(c(A,P),c(a,_),c(A,P)).
-max(c(a,_),c(A,P),c(A,P)).
-max(c(A,P),c(B,_),c(A,P)) :- integer(A), integer(B), A >= B.
-max(c(A,_),c(B,P),c(B,P)) :- integer(A), integer(B), A < B.
-max(c(A,_),c(j,P),c(j,P)) :- integer(A).
-max(c(j,P),c(A,_),c(j,P)) :- integer(A).
-max(c(A,_),c(q,P),c(q,P)) :- integer(A).
-max(c(q,P),c(A,_),c(q,P)) :- integer(A).
-max(c(_,_),c(k,P),c(k,P)).
-max(c(k,P),c(_,_),c(k,P)).
-max(c(j,_),c(q,P),c(q,P)).
-max(c(q,P),c(j,_),c(q,P)).
-max(c(A,P),c(A,_),c(A,P)).
+min(c(A,P),c(A,P),c(A,P)).
+min(c(_,P),c(a,P),c(a,P)).
+min(c(a,P),c(_,P),c(a,P)).
+min(c(A,P),c(B,P),c(A,P)) :- integer(A), integer(B), A =< B.
+min(c(A,P),c(B,P),c(B,P)) :- integer(A), integer(B), A > B.
+min(c(A,P),c(j,P),c(A,P)) :- integer(A).
+min(c(j,P),c(A,P),c(A,P)) :- integer(A).
+min(c(A,P),c(q,P),c(A,P)) :- integer(A).
+min(c(q,P),c(A,P),c(A,P)) :- integer(A).
+min(c(A,P),c(k,P),c(A,P)) :- integer(A).
+min(c(k,P),c(A,P),c(A,P)) :- integer(A).
+min(c(j,P),c(q,P),c(j,P)).
+min(c(q,P),c(j,P),c(j,P)).
+min(c(j,P),c(k,P),c(j,P)).
+min(c(k,P),c(j,P),c(j,P)).
+min(c(q,P),c(k,P),c(q,P)).
+min(c(k,P),c(q,P),c(q,P)).
 
 % siguiente(+Carta1, +Carta2) - Se cumple si Carta2 es siguiente a Carta1 (Mismo Palo, valor consecutivo)
 siguiente(c(V1,P), c(V2,P)) :-
@@ -98,17 +92,6 @@ siguiente(c(a,P), c(2,P)).
 siguiente(c(10,P), c(j,P)).
 siguiente(c(j,P), c(q,P)).
 siguiente(c(q,P), c(k,P)).
-
-anterior(c(V1,P), c(V2,P)) :-
-    integer(V1),
-    integer(V2),
-    V1 is V2 + 1.
-
-anterior(c(2,P), c(a,P)).
-anterior(c(j,P), c(10,P)).
-anterior(c(q,P), c(j,P)).
-anterior(c(k,P), c(q,P)).
-
 
 % ####################################################################################
 % Las cartas de la mano que no se asignan a ningún meld en una descomposición dada forman el deadwood relativo a esa descomposición. 
@@ -133,62 +116,100 @@ valor(c(j,_),10).
 valor(c(q,_),10).
 valor(c(k,_),10).
 % ####################################################################################
+% get_melds(+Mano, ?Melds, ?Sobrantes): Melds es una lista de listas; cada sublista
+% es un meld válido. Este predicado toma subconjuntos de la mano y va descartando en función
+% de si son Melds válidos o no. Y va armando el conjunto de melds.
+get_melds(Mano, [Meld|Melds], Sobrantes) :-
+    subconjunto(Mano, Meld),
+    length(Meld, L),
+    L >= 3,
+    L =< 10,
+    is_meld(Meld), 
+    restar_listas(Mano, Meld, RestoMano),
+    get_melds(RestoMano, Melds, Sobrantes).
+
+get_melds(Mano, [], Mano). % Caso base: las cartas que queden son sobrantes.
+
+
+
+% subconjunto(+ListaOriginal, ?Subconjunto)
+
+% Caso base: El conjunto vacío es subconjunto de cualquier lista.
+subconjunto([], []).
+
+% Opción 1: El elemento cabeza (H) se incluye en el subconjunto.
+subconjunto([H|T], [H|Sub]) :-
+    subconjunto(T, Sub).
+
+% Opción 2: El elemento cabeza (H) se excluye del subconjunto.
+subconjunto([_|T], Sub) :-
+    subconjunto(T, Sub).
+
+% restar_listas(+ManoOriginal, +ElementosAExtraer, ?ManoRestante)
+
+% Caso base: Si no hay elementos que extraer, la mano queda intacta.
+restar_listas(Mano, [], Mano).
+
+% Caso recursivo: Selecciona y quita una ocurrencia de H de la mano, 
+% y luego continúa restando la cola (T).
+restar_listas(Mano, [H|T], ManoRestante) :-
+    select(H, Mano, ManoAux),
+    restar_listas(ManoAux, T, ManoRestante).
+
 
 % get_melds(+Mano, ?Melds, ?Sobrantes): Melds es una lista de listas; cada sublista
 % es un meld válido. Este predicado puede ser no determinista: una misma mano
 % puede admitir varias descomposiciones. En ningún caso importa el orden de las
 % listas. Observar que este predicado genera todas las descomposiciones, la que
 % minimiza el valor del deadwood y las que no.
-get_melds(Mano, Melds, Sobrantes) :-
+%get_melds(Mano, Melds, Sobrantes) :-
     % generar subconjuntos de Mano  
-    particion(Mano, P),
-    filter_melds(P, Melds,SobrantesSet, is_meld),
-    flatten(SobrantesSet,Sobrantes).
+%    particion(Mano, P),
+%    filter_melds(P, Melds,SobrantesSet),
+%    flatten(SobrantesSet,Sobrantes).
 
-filter_melds([P|Ps], Melds,Sobrantes,Predicado) :- filtrar(P,Ps,Melds,Sobrantes,Predicado).
-filter_melds([],[],[],_).
+%filter_melds([P|Ps], Melds,Sobrantes)  :- filtrar(P,Ps,Melds,Sobrantes).
+%filter_melds([],[],[]).
 
-filtrar(P,Ps,[P|Melds],Sobrantes,Predicado) :-
-    T =.. [Predicado,P],
-    T,!,
-    % is_meld(P),!,
-    filter_melds(Ps,Melds,Sobrantes,Predicado).
+%filtrar(P,Ps,[P|Melds],Sobrantes) :-
+%    is_meld(P),!,
+%    filter_melds(Ps,Melds,Sobrantes).
 
-filtrar(P,Ps,Melds,[P|Sobrantes], Predicado) :-
-    filter_melds(Ps,Melds,Sobrantes,Predicado).
+%filtrar(P,Ps,Melds,[P|Sobrantes]) :-
+%    filter_melds(Ps,Melds,Sobrantes).
 
 % particion(+L,?P) - se cumple si P es una particion de L agrupando por numero de carta o por palo
-particion([L|Ls], P) :-
-    particion(Ls,Prec),
-    tres_opciones(L,Prec,P).
-particion([],[]).
+%particion([L|Ls], P) :-
+%    particion(Ls,Prec),
+%    tres_opciones(L,Prec,P).
+%particion([],[]).
 
 % tres_opciones(+L,+Particion,?NuevaParticion) - NuevaParticion es la particion P agregando el elemento L
 % Agrega a L como:
 %    - un nuevo conjunto
 %    - Lo agrega a un conjunto de P que contenga una carta del mismo palo que L
 %    - Lo agrega a un conjunto de P que contenga una carta del mismo valor
-tres_opciones(L,Particion,[[L]|Particion]).
+%tres_opciones(L,Particion,[[L]|Particion]).
 
-tres_opciones(L,Particion,P) :- 
-    select_mismo_numero(L,Pi,Particion,R),
-    append([[L|Pi]],R,P).
+%tres_opciones(L,Particion,P) :- 
+%    select_mismo_numero(L,Pi,Particion,R),
+%    append([[L|Pi]],R,P).
 
-tres_opciones(L,Particion,P) :- 
-    select_mismo_palo(L,Pi,Particion,R),
-    append([[L|Pi]],R,P).
+%tres_opciones(L,Particion,P) :- 
+%    select_mismo_palo(L,Pi,Particion,R),
+%    append([[L|Pi]],R,P).
 
 % select_mismo_numero(+C,?P,?Particion,?R) - selecciona en P un elemento de Particion que contiene 
 % una carta del mismo valor que C. R es Particion - {P}
-select_mismo_numero(C,[Ci|Pi],Particion,R) :-
-    select([Ci|Pi],Particion,R),
-    igual_valor(C,Ci).
+%select_mismo_numero(C,[Ci|Pi],Particion,R) :-
+%    select([Ci|Pi],Particion,R),
+%    igual_valor(C,Ci).
 
 % select_mismo_numero(+C,?P,?Particion,?R) - selecciona en P un elemento de Particion que contiene 
 % una carta del mismo palo que C. R es Particion - {P}
-select_mismo_palo(C,[Ci|Pi],Particion,R) :-
-    select([Ci|Pi],Particion,R),
-    igual_palo(C,Ci).
+%select_mismo_palo(C,[Ci|Pi],Particion,R) :-
+%    select([Ci|Pi],Particion,R),
+%    igual_palo(C,Ci).
 
 % ####################################################################################
 % best_melds(+Mano, ?MejorMelds, ?Sobrante, ?Valor) - De todas las particiones
@@ -200,14 +221,24 @@ select_mismo_palo(C,[Ci|Pi],Particion,R) :-
 best_melds(Mano,MejorMelds,Sobrante,Valor) :- 
     % format('Mano => ~w~n',[Mano]),
     findall((M,S), get_melds(Mano,M,S),Melds),
-    best_melds_rec(Melds,MejorMelds,Sobrante,Valor,[],[],110).
+    best_melds_rec(Melds,MejorMelds,Sobrante,Valor,[],[],111).
 
+best_melds_rec([(M,_)|Melds],MejorMelds,Sobrante,Valor,BestMeld,Leftovers,Min) :-
+    cantidad_cartas_melds(M,Cant),
+    Cant > 10,!,
+    best_melds_rec(Melds,MejorMelds,Sobrante,Valor,BestMeld,Leftovers,Min).
 best_melds_rec([(M,S)|Melds],MejorMelds,Sobrante,Valor,BestMeld,Leftovers,Min) :-
     valor_deadwood(S,V),
     % write(M), write('-'), write(S), write('=>'), write(V), write('\n'), 
     minMeld(M,S,V,BestMeld,Leftovers,Min,Mnuevo,Snuevo,MinNuevo),
     best_melds_rec(Melds,MejorMelds,Sobrante,Valor,Mnuevo,Snuevo,MinNuevo).
 best_melds_rec([],M,S,V,M,S,V).
+
+cantidad_cartas_melds([M|Ms],Cant) :-
+    length(M,L),
+    cantidad_cartas_melds(Ms,Cant1),
+    Cant is L + Cant1.
+cantidad_cartas_melds([],0).
 
 % minMeld(+M1,+S1,+V1,+M2,+S2,+V2,?R1,?R2,?R3) - Se cumple si R es el minimo entre M1 y M2 en valor
 minMeld(M1,S1,V1,_,_,V2,M1,S1,V1) :- V1 < V2. 
@@ -224,81 +255,29 @@ robar(_,_,_,random,Lugar) :- random_between(0,1,R),robar_random(R,Lugar).
 
 % Estrategia GREEDY 
 % ¿Cual es la opcion localmente optima para robar en cada mano?
-% selecciono el tope del descarte si no aumenta el deadwood
+% selecciono el tope del descarte si disminuye el deadwood
 robar(Mano,Descarte,_,greedy,Lugar) :-
     best_melds(Mano,_,_,DeadwoodMano),
-    % format('DeadwoodMano = ~w~n', [DeadwoodMano]),
     best_melds([Descarte|Mano],_,_,DeadwoodDescarte),
-    % format('DeadwoodDescarte = ~w~n', [DeadwoodDescarte]),
-    robar_greedy(DeadwoodMano,DeadwoodDescarte,Lugar),!.
+    robar_greedy(DeadwoodMano,DeadwoodDescarte,Lugar).
 
 % Estrategia PRO
 % Cual seria una mejor estrategia que greedy para robar?
-% Igual que greedy, si la carta del descarte forma un meld, robo del descarte.
-% Luego, si la carta del descarte es siguiente o si es el mismo numero que alguna de las sobrantes la robo, si no robo del mazo 
-% Ademas tener en cuenta que si la que falta para formar un meld esta en cartas vistas no la deberia robar del descarte.
-robar(Mano,Descarte,CartasVistas,pro,descarte) :-
-    robar(Mano, Descarte, CartasVistas,greedy,descarte),!.
-
-% robar(Mano,Descarte,CartasVistas,pro,descarte) :-
-%     best_melds(Mano,_,Sobrantes,_),
-%     select(Carta, Sobrantes,_),
-%     futuro_meld(Descarte, Carta, CartasVistas),!.
-
-% Aca ya se que Descarte no es parte de los melds
-% Busco proyectos de meld, si Descarte es menor que sobranteSobrantes mas grande, elijo la del descarte
-robar(Mano,Descarte,CartasVistas,pro,descarte) :-
-    best_melds(Mano,_,Sobrantes,_),
-    best_melds_sobrantes(Sobrantes, _, SobrantesSobrantes),
-    \+ es_igual_valor_unico_sobrante(Descarte,Sobrantes),
-    robar_pro_descarte(Descarte,Sobrantes,CartasVistas,SobrantesSobrantes),!.
-
-robar(_,_,_,pro,mazo).
-
-% La sobrante no forma parte de los melds, tengo que robar del mazo si el descarte es igual valor
-es_igual_valor_unico_sobrante(Descarte,Sobrantes) :-
-    format('Sobrantes: ~w~n', [Sobrantes]),
-    select(S,Sobrantes,[]),
-    igual_valor(S,Descarte),!.
-
-%Si el descarte mas una de las sobras puede formar un meld
-robar_pro_descarte(Descarte,Sobrantes,CartasVistas,_) :-
-    select(Carta, Sobrantes,_),
-    futuro_meld(Descarte, Carta, CartasVistas),!.
-    % format('Futuro Meld ~w~n', [[Descarte,Carta]]),!.
-
-% si el descarte no puede formar un meld, pero es menor que la mayor de las sobras, elijo descarte
-robar_pro_descarte(Descarte,_,_,SobrantesSobrantes) :-
-    maxL(SobrantesSobrantes,c(a,_),Max),
-    min(Descarte,Max,Descarte),!.
-
-
-
-% futuro_meld(+Carta1,+Carta2) - Se cumple si Carta1 y carta 2 son siguentes o son el mismo numero y la carta restante para 
-% formar el meld no esta en cartas vistas. Estas cartas podrian formar un meld.
-futuro_meld(Carta1, Carta2,CartasVistas) :- siguiente(Carta1,Carta2), \+ completar_run(Carta1,Carta2,CartasVistas).
-futuro_meld(Carta1, Carta2,CartasVistas) :- siguiente(Carta2,Carta1), \+ completar_run(Carta1,Carta2,CartasVistas).
-futuro_meld(Carta1, Carta2,CartasVistas) :- igual_valor(Carta1,Carta2), \+ completar_set(Carta1,Carta2,CartasVistas).
-
-% completar_meld(+Carta1,Carta2,CartasVistas) - se cumple si existe una carta en cartas vistas que completa un meld con carta1 y carta2
-% completar_meld(Carta1,Carta2,CartasVistas) :- completar_run(Carta1,Carta2,CartasVistas).
-% completar_meld(Carta1,Carta2,CartasVistas) :- completar_set(Carta1,Carta2,CartasVistas).
-
-completar_run(Carta1,Carta2,CartasVistas) :-
-    select(Carta3,CartasVistas,_),
-    is_run([Carta1,Carta2,Carta3]),!.
-
-completar_set(Carta1,Carta2,CartasVistas) :-
-    select(Carta3,CartasVistas,Resto),
-    select(Carta4,Resto,_),
-    is_set([Carta1,Carta2,Carta3,Carta4]),!.
-
+% Miro que pasaria si robo el descarte y despues descarto la mejor carta
+robar(Mano,Descarte,CartasVistas,pro,Lugar) :-
+    puntaje_mano(Mano,CartasVistas,PuntajeActual),
+    descartar([Descarte|Mano],CartasVistas,pro,ManoNueva,_),
+    puntaje_mano(ManoNueva,CartasVistas,PuntajeDescarte),
+    robar_pro(PuntajeActual,PuntajeDescarte,Lugar).
 
 robar_random(0,mazo).
 robar_random(1,descarte).
 
-robar_greedy(DeadwoodMano,DeadwoodDescarte,descarte) :- DeadwoodMano >= DeadwoodDescarte,!. %igual si la carta del descarte forma meld, el Deadwood no aumenta
+robar_greedy(DeadwoodMano,DeadwoodDescarte,descarte) :- DeadwoodMano > DeadwoodDescarte,!.
 robar_greedy(_,_,mazo).
+
+robar_pro(PuntajeActual,PuntajeDescarte,descarte) :- PuntajeDescarte < PuntajeActual,!.
+robar_pro(_,_,mazo).
 
 % ####################################################################################
 % descartar(+OldMano, +CartasVistas, +Estrategia, ?NewMano, ?NewDescarte)
@@ -312,86 +291,28 @@ descartar(OldMano,_,random,NewMano,NewDescarte) :-
 
 % Estrategia GREEDY
 % ¿Cual es la opcion localmente optima para descartar en cada mano?
-% Descarto la que tiene mayor valor y no rompe melds
-descartar(OldMano,_,greedy,NewMano,NewDescarte) :- 
-    best_melds(OldMano,_,Sobrantes,_),!,
-    maxL(Sobrantes,c(a,_),NewDescarte),
-    select(NewDescarte,OldMano,NewMano),!.
-    
+% Descarto la que genera un menor deadwood al tirarla.
+descartar(OldMano, _, greedy, NewMano, NewDescarte) :- 
+    findall((Deadwood, Carta, ManoRestante),
+        (select(Carta, OldMano, ManoRestante),
+         best_melds(ManoRestante, _, _, Deadwood)),
+        Opciones),
+    sort(Opciones, [(MinDeadwood, NewDescarte, NewMano)|_]), !.
+
 % Estrategia PRO
 % Mejor estrategia que greedy para descartar?
 % Lo que hace greedy lo tenemos que mantener
 % Utilizar de alguna forma CartasVistas para descartar la de mayor valor que no puede formar
 % un meld dado que la que falta para formar el meld esta en cartas vistas
-descartar(OldMano, CartasVistas, pro, NewMano, NewDescarte) :-
-    best_melds(OldMano,_,Sobrantes,_),
-    % format('Sobrantes = ~w~n', [Sobrantes]),
-    best_melds_sobrantes(Sobrantes, MeldsProyecto, SobrantesSobrantes),
-    % format('Proyectos de Meld: ~w | SobrantesSobrantes:~w~n', [MeldsProyecto, SobrantesSobrantes]),
-    descartar_pro(OldMano, CartasVistas, MeldsProyecto, SobrantesSobrantes, NewMano, NewDescarte),!.
+descartar(OldMano,CartasVistas,pro,NewMano,NewDescarte) :-
+    findall((Puntaje,ValorCarta,Carta,Mano),
+        (select(Carta,OldMano,Mano),
+         puntaje_mano(Mano,CartasVistas,Puntaje),
+         valor(Carta,Valor),
+         ValorCarta is -Valor),
+        Opciones),
+    sort(Opciones,[(_,_,NewDescarte,NewMano)|_]),!.
 
-% best_melds_sobrantes(+Sobrantes, ?MeldsProyecto, ?SobrantesSobrantes) - Se cumple si MeldsProyecto es una lista de proyectos de Meld
-% conjuntos de parejas de cartas del mismo palo e igual numero o cartas consecutivas, Sobrantes las cartas que quedan sin pareja. Se 
-% minimiza el valor de SobrantesSobrantes. Es analogo a best_melds con la diferencia de que se consideran melds parejas de cartas consecutivas 
-% o cartas de igual numero.
-best_melds_sobrantes(Sobrantes, MeldsProyecto, SobrantesSobrantes) :-
-    findall((M,S), get_melds_sobrantes(Sobrantes,M,S), Melds),
-    best_melds_rec(Melds,MeldsProyecto,SobrantesSobrantes,_,[],[],110).
-
-% analogo a get_melds, con la diferencia de que se consideran melds parejas de cartas consecutivas 
-% o cartas de igual numero.
-get_melds_sobrantes(Cartas, Melds, Sobrantes) :-
-    particion(Cartas, P),
-    filter_melds(P, Melds, SobrantesSet, is_meld_proyect),
-    flatten(SobrantesSet,Sobrantes).
-
-is_meld_proyect([C1,C2]) :- siguiente(C1,C2),!. 
-is_meld_proyect([C1,C2]) :- siguiente(C2,C1),!.
-is_meld_proyect([C1,C2]) :- igual_valor(C1,C2),!. 
-
-
-% casos 
-    % Todas son SobrantesSobrantes
-    % Todas son MeldsProyecto
-    % Hay MeldsProyecto y Sobrantes
-    %     Si para un meldProyecto la que falta ya salio, descarto mas grande de ese proyecto
-    %     Si no, descarto mayor de SobrantesSobrantes
-% Todas son SobrantesSobrantes
-descartar_pro(OldMano,_, [], SobrantesSobrantes, NewMano, NewDescarte) :-
-    maxL(SobrantesSobrantes,c(a,_),NewDescarte),
-    select(NewDescarte,OldMano,NewMano),!.
-
-% Todos son proyectos de Meld y existe uno que no se puede completar porque la que falta esta en cartas vistas
-descartar_pro(OldMano, CartasVistas, MeldsProyecto,[], NewMano, NewDescarte) :-
-    select(P,MeldsProyecto,_),
-    completa_meld(P,CartasVistas),!,
-    maxL(P,c(a,_),NewDescarte),        
-    select(NewDescarte, OldMano, NewMano),!.
-
-%Todas son proyectos de meld que pueden completarse
-descartar_pro(OldMano,_, MeldsProyecto, [], NewMano, NewDescarte) :-
-    flatten(MeldsProyecto, Sobrantes),
-    maxL(Sobrantes,c(a,_),NewDescarte),
-    select(NewDescarte,OldMano,NewMano),!.
-
-% Hay melds y SobranteSobrantes, para un meld la carta que lo completa esta en cartas vistas
-descartar_pro(OldMano, CartasVistas, MeldsProyecto,_, NewMano, NewDescarte) :-
-    select(P,MeldsProyecto,_),
-    completa_meld(P,CartasVistas),!,
-    maxL(P,c(a,_),NewDescarte),        
-    select(NewDescarte, OldMano, NewMano),!.
-
-% Ningun proyecto de meld se completa con cartas vistas, descarto la mayor de SobrantesSobrantes
-descartar_pro(OldMano, _, _, SobrantesSobrantes, NewMano, NewDescarte) :-
-    maxL(SobrantesSobrantes,c(a,_),NewDescarte),       
-    select(NewDescarte, OldMano, NewMano),!.
-
-% completa_meld(+ProyectoMeld, +CartasVistas) - Se cumple si existe una carta en CartasVistas que completa ProyectoMeld
-completa_meld(ProyectoMeld, CartasVistas) :-
-    select(C,CartasVistas,_),
-    % append(ProyectoMeld,[C],Meld),
-    is_meld([C|ProyectoMeld]).
- 
 % select_random(OldMano, NewMano, Carta) - se cumple si oldMano + {Carta} = OldMano
 select_random(OldMano, NewMano, Carta) :-
     random_between(0,10,R),  
@@ -406,16 +327,66 @@ select_n_rec(S,N,[L|Ls],[L|R],Pos) :-
     select_n_rec(S,N,Ls,R,N1).
 select_n_rec(L,Pos,[L|Ls],Ls,Pos).
 
-% select_Max(+Cartas, ?Max, ?R) - Se cumple si Max es la carta Maxima de Cartas y R es Cartas sin Max  
-% select_max(Cartas, Max, R) :- 
-%     maxL(Cartas, c(a,_), Max),
-%     select(Max, Cartas, R). 
+% puntaje_mano(+Mano,+CartasVistas,?Puntaje) - puntaje chico es mejor
+puntaje_mano(Mano,CartasVistas,Puntaje) :-
+    best_melds(Mano,_,Sobrantes,Deadwood),
+    potencial_sobrantes(Sobrantes,Mano,CartasVistas,Potencial),
+    Puntaje is Deadwood * 10 - Potencial.
 
-% MaxL(+Cartas,+MaxAcc,?M) - M es la carta mayor de la lista Cartas
-maxL([H|T],Max,M) :- 
-    max(H,Max,Max1),!,
-    maxL(T,Max1,M).
-maxL([],X,X).
+potencial_mano(Mano,CartasVistas,Potencial) :-
+    best_melds(Mano,_,Sobrantes,_),
+    potencial_sobrantes(Sobrantes,Mano,CartasVistas,Potencial).
+
+potencial_sobrantes([C|Cs],Mano,CartasVistas,Potencial) :-
+    potencial_carta(C,Mano,CartasVistas,P1),
+    potencial_sobrantes(Cs,Mano,CartasVistas,P2),
+    Potencial is P1 + P2.
+potencial_sobrantes([],_,_,0).
+
+potencial_carta(Carta,Mano,CartasVistas,Puntos) :-
+    findall(1,carta_cerca(Carta,Mano,CartasVistas),L),
+    length(L,Puntos).
+
+carta_cerca(c(V,P),Mano,_) :-
+    member(c(V,P2),Mano),
+    P \= P2.
+carta_cerca(c(V,P),Mano,_) :-
+    valor_siguiente(A,V),
+    member(c(A,P),Mano).
+carta_cerca(c(V,P),Mano,_) :-
+    valor_siguiente(V,S),
+    member(c(S,P),Mano).
+carta_cerca(c(V,P),Mano,CartasVistas) :-
+    valor_siguiente(A,V),
+    \+ member(c(A,P),Mano),
+    \+ member(c(A,P),CartasVistas).
+carta_cerca(c(V,P),Mano,CartasVistas) :-
+    valor_siguiente(V,S),
+    \+ member(c(S,P),Mano),
+    \+ member(c(S,P),CartasVistas).
+carta_cerca(c(V,P),Mano,CartasVistas) :-
+    palo_valido(P2),
+    P \= P2,
+    \+ member(c(V,P2),Mano),
+    \+ member(c(V,P2),CartasVistas).
+
+palo_valido(c).
+palo_valido(d).
+palo_valido(t).
+palo_valido(p).
+
+valor_siguiente(a,2).
+valor_siguiente(2,3).
+valor_siguiente(3,4).
+valor_siguiente(4,5).
+valor_siguiente(5,6).
+valor_siguiente(6,7).
+valor_siguiente(7,8).
+valor_siguiente(8,9).
+valor_siguiente(9,10).
+valor_siguiente(10,j).
+valor_siguiente(j,q).
+valor_siguiente(q,k).
 
 % ####################################################################################
 % cerrar(+Mano, +CartasVistas, +Estrategia, ?Decision)
@@ -439,42 +410,25 @@ cerrar(_,_,greedy,cortar).
 
 % Estrategia PRO
 % Cual seria una estrategia mejor que greedy para cerrar?
-% Si ya esta en menos de diez puntos
-% - para todo set si es de tres y la que falta no esta en cartas vistas seguir
-% - si existe run, y la que sigue o la antecedente no esta en vartas vistas seguir
+% Si la mano es buena corta, si todavia puede mejorar bastante sigue jugando
+% El jugador decide arriesgarse a no cortar (teniendo <= 10 de deadwood) 
+% solo si el total de sus cartas sobrantes tiene al menos 10 "salidas" o 
+% cartas útiles esperándolo en el mazo.
 cerrar(Mano,CartasVistas,pro,Decision) :-
-    best_melds(Mano, Melds,Sobrantes,Valor),
-    % format('Melds => ~w~n', [Melds]),
-    % format('Sobrantes => ~w~n', [Sobrantes]),   
-    findall(D,cerrar_pro(Melds,CartasVistas,Valor,D), Decisiones),
-    % format('Decisiones => ~w~n', [Decisiones]),   
-    seleccionar_decision_pro(Decisiones,Decision).
+    best_melds(Mano,_,_,Valor),
+    cerrar_pro(Mano,CartasVistas,Valor,Decision),!.
 
-seleccionar_decision_pro(Decisiones, continuar) :- member(continuar,Decisiones),!.
-seleccionar_decision_pro(_, cortar). 
+cerrar_pro(_,_,Valor,continuar) :- 
+    Valor > 10,!.
+cerrar_pro(_, _, 0, cortar) :- !.
 
-cerrar_pro(_,_,0,cortar) :- !.
-cerrar_pro(_,_,Valor,continuar) :- Valor > 10,!.
+cerrar_pro(Mano, CartasVistas, Valor, continuar) :- 
+    potencial_mano(Mano, CartasVistas, Potencial),
+    Potencial >= 10,
+    !.
 
-% Deadwood menor que 10 
-cerrar_pro(Melds,CartasVistas,_,Decision) :- 
-    member(M,Melds),
-    cerrar_pro_set_or_run(M, CartasVistas, Decision).
-
-cerrar_pro_set_or_run([c(N,P)|Ms], CartasVistas, continuar) :-
-    is_set([c(N,P)|Ms]),
-    \+ member(c(N,_),CartasVistas),!.
-
-cerrar_pro_set_or_run(Meld, CartasVistas, continuar) :-
-    is_run(Meld),
-    minL(Meld,c(k,_),Min),
-    anterior(Min,AnteriorMin),
-    \+ member(AnteriorMin,CartasVistas),!,
-    maxL(Meld,c(a,_),Max),
-    siguiente(Max,SiguienteMax),
-    \+ member(SiguienteMax,CartasVistas),!.
-cerrar_pro_set_or_run(_,_,cortar).
-
+cerrar_pro(_, _, _, cortar).
+    
 decision_random(0,cortar).
 decision_random(1,continuar).
 
