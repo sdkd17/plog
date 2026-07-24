@@ -1,0 +1,210 @@
+{
+  "id": "string",
+  "href": "string",
+  "description": "string",
+  "isBundle": true,
+  "lastUpdate": "2026-07-18T22:03:47.187Z",
+  "lifecycleStatus": "string",
+  "name": "string",
+  "version": "string",
+  "attachment": [],
+  "constraint": [],
+  "entitySpecRelationship": [
+    {
+      "id": "string",
+      "href": "string",
+      "name": "string",
+      "relationshipType": "string",
+      "role": "string",
+      "associationSpec": {
+        "id": "string",
+        "href": "string",
+        "name": "string",
+        "@baseType": "string",
+        "@schemaLocation": "string",
+        "@type": "string",
+        "@referredType": "string"
+      },
+      "validFor": {
+        "endDateTime": "1985-04-12T23:20:50.52Z",
+        "startDateTime": "1985-04-12T23:20:50.52Z"
+      },
+      "@baseType": "string",
+      "@schemaLocation": "string",
+      "@type": "string",
+      "@referredType": "string"
+    }
+  ],
+  "relatedParty": [],
+  "relatedServiceSpecification": [],
+  "serviceTestSpecRelationship": [
+    {
+      "relationshipType": "executionTree",
+      "@referredType": "TEST_FALLA_MAYOR",
+      "children": [
+        {
+          "@referredType": "TEST_ONU",
+          "guard": [
+            {
+              "@referredType": "TEST_FALLA_MAYOR",
+              "metricName": "TEST_RESULT",
+              "hasRuleViolation": false,
+              "@type": "RuleViolationGuard"
+            }
+          ],
+          "children": [
+            {
+              "@referredType": "TEST_PORT",
+              "guard": [
+                {
+                  "@referredType": "TEST_ONU",
+                  "@type": "RuleViolationGuard",
+                  "metricName": "PHASE_STATE",
+                  "hasRuleViolation": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "@referredType": "TEST_HSI",
+          "guard": [
+            {
+              "@referredType": "TEST_ONU",
+              "@type": "RuleViolationGuard",
+              "metricName": "PHASE_STATE",
+              "hasRuleViolation": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "specCharacteristic": [
+    {
+      "id": "string",
+      "configurable": true,
+      "description": "string",
+      "extensible": true,
+      "isUnique": true,
+      "maxCardinality": 0,
+      "minCardinality": 0,
+      "name": "string",
+      "regex": "string",
+      "valueType": "string",
+      "charSpecRelationship": [
+        {
+          "characteristicSpecificationId": "string",
+          "name": "string",
+          "parentSpecificationHref": "string",
+          "parentSpecificationId": "string",
+          "relationshipType": "string",
+          "validFor": {
+            "endDateTime": "1985-04-12T23:20:50.52Z",
+            "startDateTime": "1985-04-12T23:20:50.52Z"
+          },
+          "@baseType": "string",
+          "@schemaLocation": "string",
+          "@type": "string"
+        }
+      ],
+      "characteristicValueSpecification": [
+        {
+          "isDefault": true,
+          "rangeInterval": "string",
+          "regex": "string",
+          "unitOfMeasure": "string",
+          "valueFrom": 0,
+          "valueTo": 0,
+          "valueType": "string",
+          "validFor": {
+            "endDateTime": "1985-04-12T23:20:50.52Z",
+            "startDateTime": "1985-04-12T23:20:50.52Z"
+          },
+          "value": "string",
+          "@baseType": "string",
+          "@schemaLocation": "string",
+          "@type": "string"
+        }
+      ],
+      "validFor": {
+        "endDateTime": "1985-04-12T23:20:50.52Z",
+        "startDateTime": "1985-04-12T23:20:50.52Z"
+      },
+      "@baseType": "string",
+      "@schemaLocation": "string",
+      "@type": "string",
+      "@valueSchemaLocation": "string"
+    }
+  ],
+  "targetEntitySchema": {
+    "@schemaLocation": "string",
+    "@type": "string"
+  },
+  "testMeasureDefinition": [
+    {
+      "captureFrequency": "string",
+      "captureMethod": "string",
+      "metricDescription": "string",
+      "metricHref": "string",
+      "metricName": "string",
+      "name": "string",
+      "unitOfMeasure": "string",
+      "valueType": "string",
+      "capturePeriod": {
+        "amount": 0,
+        "units": "string"
+      },
+      "thresholdRule": [
+        {
+          "conformanceComparatorExact": true,
+          "conformanceComparatorLower": "string",
+          "conformanceComparatorUpper": "string",
+          "conformanceTargetExact": "string",
+          "conformanceTargetLower": "string",
+          "conformanceTargetUpper": "string",
+          "description": "string",
+          "name": "string",
+          "numberOfAllowedCrossing": 0,
+          "thresholdRuleSeverity": "string",
+          "consequence": [
+            {
+              "description": "string",
+              "name": "string",
+              "prescribeAction": "string",
+              "repeatAction": true,
+              "validFor": {
+                "endDateTime": "1985-04-12T23:20:50.52Z",
+                "startDateTime": "1985-04-12T23:20:50.52Z"
+              },
+              "@baseType": "string",
+              "@schemaLocation": "string",
+              "@type": "string"
+            }
+          ],
+          "tolerancePeriod": {
+            "amount": 0,
+            "units": "string"
+          },
+          "@baseType": "string",
+          "@schemaLocation": "string",
+          "@type": "string"
+        }
+      ],
+      "validFor": {
+        "endDateTime": "1985-04-12T23:20:50.52Z",
+        "startDateTime": "1985-04-12T23:20:50.52Z"
+      },
+      "@baseType": "string",
+      "@schemaLocation": "string",
+      "@type": "string"
+    }
+  ],
+  "validFor": {
+    "endDateTime": "1985-04-12T23:20:50.52Z",
+    "startDateTime": "1985-04-12T23:20:50.52Z"
+  },
+  "@baseType": "string",
+  "@schemaLocation": "string",
+  "@type": "string"
+}
